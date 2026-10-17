@@ -5,7 +5,7 @@ Vercel Hobby and the selected weather service are for a personal noncommercial d
 
 ## Backend first
 
-Current API preview: `https://spotter-8odc20zxs-xeli-staging.vercel.app`.
+Current API: `https://spotter-api-thriftykapila.vercel.app`.
 Current public frontend: [spotter-web-swart.vercel.app](https://spotter-web-swart.vercel.app).
 Both projects are on the existing `xeli-staging` Hobby workspace.
 
@@ -37,7 +37,7 @@ Native Shapely/pyproj/timezonefinder imports must pass on Linux before declaring
 4. Commit the rewrite change and deploy the frontend. The browser calls `/api/*` on its own origin.
 5. Optionally set `VITE_TOMTOM_MAP_KEY` to a separate browser-restricted Map Display key.
 
-The committed rewrite points to the verified API preview above. Never point it to a different owner's
+The committed rewrite points to the API alias above. Never point it to a different owner's
 unverified application. Preview URLs may need deployment protection adjusted for evaluator access
 and frontend-to-backend rewrites. Account-owned stable URLs are preferred for final submission.
 
@@ -67,10 +67,13 @@ Cold starts and third-party response times remain possible. Free-tier quota exha
 features. Check account dashboards before recording the walkthrough. A custom domain is optional;
 Vercel preview/project domains are sufficient for evaluation.
 
-Git-triggered Vercel deployments are explicitly disabled in both configs while provider setup is
-pending. GitHub Actions still runs on pushes. Deploy previews deliberately with `--target preview`
+Git-triggered Vercel deployments are explicitly disabled in both configs so previews are reviewed
+before becoming the public app. GitHub Actions still runs on pushes. Deploy with `--target preview`
 and the matching project ID from the repository root; deployment settings use the backend/frontend
-root directories. After any backend preview changes, run the rewrite configuration script again.
+root directories. Once a backend preview passes verification, assign the API alias to it with
+`vercel alias set NEW-PREVIEW.vercel.app spotter-api-thriftykapila.vercel.app`.
+The frontend rewrite stays unchanged while this alias is retained. Assign the public frontend alias
+only after its preview passes browser verification.
 
 ## Stay on free plans
 

@@ -7,8 +7,10 @@ route comparison, map, and forecast timeline in one workspace.
 **[Open the hosted application](https://spotter-web-swart.vercel.app)** ·
 **[GitHub repository](https://github.com/thriftykapila/spotter)**
 
-The hosted sample is ready. Live routing stays disabled until the free TomTom and Upstash
-accounts are verified and their backend credentials are configured.
+The hosted app supports live US truck routing and a labeled sample trip. TomTom, Upstash Free,
+and Vercel Hobby are configured. No payment method or paid upgrade was added during setup.
+
+![Sample trip workspace with three route options, checkpoints, and forecast timeline](docs/screenshots/sample-workspace.png)
 
 ## Run locally
 
@@ -70,6 +72,7 @@ make lint
 
 Browser scenarios live in `frontend/e2e/` and run with `npm run test:e2e` from `frontend/`.
 GitHub Actions runs backend tests, native dependency imports, frontend tests, and the production build.
+See the [verification record](docs/verification.md) for live-trip results and measured limits.
 
 ## Hosting
 
@@ -80,6 +83,9 @@ temporary analyses and forecasts, not user accounts or trip history.
 [Deployment instructions](docs/deployment.md) cover secrets, API rewrites, preview verification,
 and free-tier limits. [Walkthrough script](docs/walkthrough.md) provides a seven-minute recording
 sequence. No Loom recording is included yet.
+
+Live requests stop if shared quotas or Redis are unavailable. Upstash Free exhaustion can pause
+live service; the sample trip remains usable. Paid plans must be selected manually outside the app.
 
 ## Data sources
 
