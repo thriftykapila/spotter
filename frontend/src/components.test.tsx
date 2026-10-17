@@ -86,9 +86,9 @@ describe('route safety states', () => {
         timezone="America/Chicago"
       />,
     );
-    expect(screen.getByText('No travel: 70.0 miles')).toBeInTheDocument();
+    expect(screen.getByText('No travel · 70 mi')).toBeInTheDocument();
     expect(screen.queryByText('Recommended')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: /^Select / }));
     expect(select).toHaveBeenCalledOnce();
   });
   it('distinguishes incomplete weather from safe weather', () => {
@@ -106,7 +106,41 @@ describe('route safety states', () => {
       />,
     );
     expect(screen.getByText(/Incomplete weather.*unknown/)).toBeInTheDocument();
-    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /^Select / })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+  it('explains route metrics on hover, focus, and tap without changing route selection', () => {
+    const select = vi.fn();
+    render(
+      <RouteRow
+        route={route}
+        index={0}
+        recommended={false}
+        selected={false}
+        onSelect={select}
+        timezone="America/Chicago"
+      />,
+    );
+    const stat = screen.getByRole('button', { name: 'Severe 20 mi' });
+    fireEvent.mouseEnter(stat);
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Estimated miles with severe weather');
+    fireEvent.mouseLeave(stat);
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    fireEvent.focus(stat);
+    expect(stat).toHaveAccessibleDescription(
+      'Estimated miles with severe weather along this route.',
+    );
+    fireEvent.keyDown(stat, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    fireEvent.click(stat);
+    expect(screen.getByRole('tooltip')).toBeVisible();
+    expect(select).not.toHaveBeenCalled();
+    fireEvent.blur(stat);
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Select / }));
+    expect(select).toHaveBeenCalledOnce();
   });
   it('offers an accessible checkpoint action with unknown risk', () => {
     const select = vi.fn();
