@@ -78,6 +78,12 @@ exited successfully with the existing HSTS-disabled warning.
 
 The [UI review](ui-review.md) records outstanding findings separately from these implemented changes.
 
+The later route-only scrolling change was checked at 1280×600. The route viewport was 160px tall
+with 288px of content; mouse-wheel scrolling reached the final card at scrollTop 128px. The form
+remained at y=52px and the sidebar's own scrollTop remained zero. Keyboard focus reached the last
+card's statistics inside the visible route viewport. The production build and all 10 browser
+scenarios passed again for this CSS change.
+
 ## Remaining delivery item
 
 The [seven-minute walkthrough script](walkthrough.md) is ready. A Loom recording and upload have

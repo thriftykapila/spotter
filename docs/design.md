@@ -26,6 +26,8 @@ Keep the form visible beside compact route rows and a large map. Use a consisten
 On desktop windows up to 800px tall, use 40px controls and tighter vertical spacing so the default
 form and all three routes fit. Taller windows distribute spare height between route choices and
 retain comfortable form spacing. Mobile retains 44px inputs and normal document scrolling.
+On desktop, the route cards scroll independently when space is limited; the form and Routes
+heading stay in place. Keep the card sizing and spacing unchanged when enabling this overflow.
 Origin and Destination share aligned input edges with a 12px label gap. The spacing dropdown
 arrow has a 12px inset from the trailing edge.
 Place the load and checkpoint spacing controls on one row. Keep assumptions and route-ranking
