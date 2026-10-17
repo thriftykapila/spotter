@@ -464,7 +464,9 @@ function TripMap({
         <div className="basemap-note">
           {basemapFailed
             ? 'Basemap unavailable · Route overlays remain available'
-            : 'Local overview map · Synthetic routes are not for navigation'}
+            : trip?.mode === 'live'
+              ? 'Local overview map · Planning aid, not turn-by-turn navigation'
+              : 'Local overview map · Synthetic routes are not for navigation'}
         </div>
       ) : null}
     </div>
