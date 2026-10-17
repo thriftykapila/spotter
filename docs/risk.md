@@ -65,6 +65,11 @@ do not intensify its colors. Each cell has the same fixed risk legend at every z
 is clipped to the union of ±25-mile route corridors, starting at 10-mile cells and increasing in
 5-mile steps until at most 200 cells remain. Cell resolution is approximate and disclosed.
 
+To keep dense road geometry within the response deadline, corridor outlines use projected route
+lines simplified with a 50-meter tolerance before buffering each line and merging the buffers.
+This approximation applies only to the forecast corridor. Route lines, checkpoint positions,
+arrival times, and route risk mileage retain the provider's original geometry and progress.
+
 Frames are departure plus 0 through 48 hours. They are independent of checkpoint arrival-time
 assessment. Moving the slider never changes the recommendation. Coarse cells can miss local
 weather variation; authoritative displayed route scores come from the checkpoint calculations.

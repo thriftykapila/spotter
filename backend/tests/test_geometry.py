@@ -1,5 +1,7 @@
 import itertools
+from copy import deepcopy
 from datetime import UTC, datetime
+from math import pi, sin
 
 import pytest
 from hypothesis import given
@@ -7,6 +9,7 @@ from hypothesis import strategies as st
 from shapely.geometry import Point, shape
 from shapely.ops import unary_union
 
+from routing.errors import Deadline, RoutingError
 from routing.geometry import MILE_METERS, corridor_grid, sample_route, segments_for_route
 
 DEPARTURE = datetime(2026, 10, 18, 12, tzinfo=UTC)
@@ -88,12 +91,8 @@ def test_segments_follow_bends_instead_of_cutting_between_checkpoints():
     for checkpoint in route["checkpoints"]:
         checkpoint["risk"] = {"level": "low", "score": 0, "reasons": []}
     features = segments_for_route(route)["features"]
-    assert features[0]["geometry"]["coordinates"][-1] == pytest.approx(
-        [-103, 40], abs=1e-10, rel=0
-    )
-    assert features[1]["geometry"]["coordinates"][0] == pytest.approx(
-        [-103, 40], abs=1e-10, rel=0
-    )
+    assert features[0]["geometry"]["coordinates"][-1] == pytest.approx([-103, 40], abs=1e-10, rel=0)
+    assert features[1]["geometry"]["coordinates"][0] == pytest.approx([-103, 40], abs=1e-10, rel=0)
     assert features[0]["properties"]["start_checkpoint_id"] == "a-cp-0"
 
 
@@ -128,3 +127,36 @@ def test_grid_can_coarsen_to_single_cell_without_infinite_loop():
     grid, size = corridor_grid([route_fixture()], max_cells=1)
     assert len(grid["features"]) == 1
     assert size > 10
+
+
+def test_dense_overlapping_road_geometry_keeps_corridor_coverage_and_raw_routes():
+    # Provider polylines include thousands of road-scale vertices shared by
+    # alternatives. Those details must not make a coarse forecast grid expensive.
+    routes = []
+    for offset in (0, 0.03, -0.03):
+        coordinates = []
+        for index in range(6001):
+            fraction = index / 6000
+            coordinates.append(
+                [
+                    -105 + 10 * fraction,
+                    39 + offset + 0.08 * sin(4 * pi * fraction) + 0.00002 * sin(index * 1.8),
+                ]
+            )
+        routes.append({"geometry": {"type": "LineString", "coordinates": coordinates}})
+    original = deepcopy(routes)
+    grid, size = corridor_grid(routes)
+    coverage = unary_union([shape(feature["geometry"]) for feature in grid["features"]])
+    assert 0 < len(grid["features"]) <= 200
+    assert size >= 10
+    for route in routes:
+        for point in route["geometry"]["coordinates"][::500]:
+            assert coverage.covers(Point(point))
+    assert not coverage.covers(Point(-100, 41))
+    assert routes == original  # Only the overlay may simplify navigation geometry.
+
+
+def test_expired_deadline_stops_corridor_before_geometry_work():
+    with pytest.raises(RoutingError) as caught:
+        corridor_grid([route_fixture()], deadline=Deadline(0))
+    assert caught.value.code == "DEADLINE_EXCEEDED"

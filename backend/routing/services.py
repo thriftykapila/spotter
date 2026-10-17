@@ -209,7 +209,7 @@ def corridor_for_trip(identifier, *, store=None, weather=None):
         cached = store.get_json(key)
         if cached:
             return _check_response_size(cached)
-        cells, size = corridor_grid(trip["routes"], max_cells=200)
+        cells, size = corridor_grid(trip["routes"], max_cells=200, deadline=deadline)
         points = [coordinate_key(cell["properties"]["lat"], cell["properties"]["lon"])
                   for cell in cells["features"]]
         departure = datetime.fromisoformat(trip["departure_at"])

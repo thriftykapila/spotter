@@ -12,6 +12,7 @@ from shapely.ops import unary_union
 from shapely.prepared import prep
 
 MILE_METERS = 1609.344
+CORRIDOR_SIMPLIFICATION_METERS = 50
 GEOD = Geod(ellps="WGS84")
 TO_EQUAL_AREA = Transformer.from_crs("EPSG:4326", "EPSG:5070", always_xy=True)
 FROM_EQUAL_AREA = Transformer.from_crs("EPSG:5070", "EPSG:4326", always_xy=True)
@@ -196,19 +197,38 @@ def _polygon_parts(geometry):
     return []
 
 
-def corridor_grid(routes, max_cells=200):
+def corridor_grid(routes, max_cells=200, *, deadline=None):
+    """Clip forecast cells to an approximate 25-mile route corridor.
+
+    Road-level geometry is simplified by at most 50 projected meters for this
+    coarse overlay only. Buffering each route before the polygon union avoids
+    noding thousands of overlapping road segments into an expensive network.
+    """
     if not routes or max_cells < 1:
         raise ValueError("A corridor needs routes and a positive cell budget.")
     unique_lines = {}
     for route in routes:
-        line = transform(
-            LineString(route["geometry"]["coordinates"]),
-            TO_EQUAL_AREA.transform,
-            interleaved=False,
-        ).normalize()
+        if deadline:
+            deadline.remaining()
+        line = (
+            transform(
+                LineString(route["geometry"]["coordinates"]),
+                TO_EQUAL_AREA.transform,
+                interleaved=False,
+            )
+            .simplify(CORRIDOR_SIMPLIFICATION_METERS, preserve_topology=False)
+            .normalize()
+        )
         unique_lines[line.wkb] = line
     projected = [unique_lines[key] for key in sorted(unique_lines)]
-    corridor = unary_union(projected).buffer(25 * MILE_METERS, quad_segs=8)
+    buffers = []
+    for line in projected:
+        if deadline:
+            deadline.remaining()
+        buffers.append(line.buffer(25 * MILE_METERS, quad_segs=8))
+    if deadline:
+        deadline.remaining()
+    corridor = unary_union(buffers)
     prepared = prep(corridor)
     min_x, min_y, max_x, max_y = corridor.bounds
     # Keep one origin while coarsening, so even a budget of one cell can terminate.
@@ -216,10 +236,14 @@ def corridor_grid(routes, max_cells=200):
     origin_y = floor(min_y / (10 * MILE_METERS)) * 10 * MILE_METERS
     cell_size_miles = 10
     while True:
+        if deadline:
+            deadline.remaining()
         size = cell_size_miles * MILE_METERS
         cells = []
         overflow = False
         for row in range(ceil((max_y - origin_y) / size)):
+            if deadline:
+                deadline.remaining()
             for column in range(ceil((max_x - origin_x) / size)):
                 square = box(
                     origin_x + column * size,
