@@ -26,13 +26,16 @@ export function ForecastTimeline({
       <div className="forecast-header">
         <div className="forecast-title">
           <CloudSun size={19} aria-hidden="true" />
-          <strong>Corridor forecast</strong>
-          <span
-            className="info-tip"
-            title="A weather risk grid across the trip corridor. Each hour shows weather at one forecast time. This view does not change the arrival-time route assessment."
-          >
-            <Info size={15} aria-hidden="true" />
-          </span>
+          <strong>Forecast</strong>
+          <details className="forecast-info">
+            <summary aria-label="About the forecast">
+              <Info size={15} aria-hidden="true" />
+            </summary>
+            <p>
+              Approximate corridor weather at the selected time. Route rankings use weather at each
+              checkpoint’s arrival. Times shown in {timezone}.
+            </p>
+          </details>
         </div>
         <label className="heatmap-toggle">
           <input
@@ -40,16 +43,22 @@ export function ForecastTimeline({
             checked={visible}
             onChange={(event) => onVisible(event.target.checked)}
           />
-          Show heatmap
+          Heatmap
         </label>
       </div>
       <div className="forecast-time">
         <span>
-          {corridor
-            ? formatTime(corridor.hours[hour], timezone)
-            : loading
-              ? 'Loading 48-hour forecast…'
-              : 'Forecast unavailable'}
+          {corridor ? (
+            <time dateTime={corridor.hours[hour]}>
+              {formatTime(corridor.hours[hour], timezone)}
+            </time>
+          ) : loading ? (
+            'Loading forecast…'
+          ) : error ? (
+            'Forecast unavailable'
+          ) : (
+            'Plan a trip to see weather'
+          )}
         </span>
         <strong>+{hour} hr</strong>
       </div>
@@ -68,18 +77,17 @@ export function ForecastTimeline({
         aria-valuetext={`${hour} hours after departure${corridor ? `, ${formatTime(corridor.hours[hour], timezone)}` : ''}`}
       />
       <div className="forecast-scale" aria-hidden="true">
-        <span>Departure</span>
-        <span>+12 hr</span>
-        <span>+24 hr</span>
-        <span>+36 hr</span>
-        <span>+48 hr</span>
+        <span>0</span>
+        <span>12</span>
+        <span>24</span>
+        <span>36</span>
+        <span>48 hr</span>
       </div>
-      <p className="forecast-footnote">
-        {error ??
-          (corridor
-            ? `${corridor.cell_size_miles.toFixed(1)}-mile cells · Hourly forecast · Route rankings use checkpoint arrival times`
-            : 'The corridor is loaded separately from your route assessment.')}
-      </p>
+      {error || corridor ? (
+        <p className="forecast-footnote" role={error ? 'alert' : undefined}>
+          {error ?? `${corridor!.cell_size_miles.toLocaleString()} mi cells`}
+        </p>
+      ) : null}
     </section>
   );
 }

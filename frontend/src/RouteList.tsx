@@ -1,4 +1,4 @@
-import { Check, ChevronRight, CircleAlert, Clock3 } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import { formatDuration, formatMiles, formatTime } from './time';
 import { riskNames } from './risk';
 import type { RiskLevel, Route, Trip } from './types';
@@ -20,26 +20,15 @@ export function RouteList({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
-  const recommendedTitle = trip.routes
-    .find((route) => route.id === trip.recommended_route_id)
-    ?.label.split(' · ')[0];
   return (
     <section className="route-list" aria-labelledby="route-heading">
       <div className="section-heading">
-        <h2 id="route-heading">Route comparison</h2>
-        <span className="count">{trip.routes.length} routes</span>
+        <h2 id="route-heading">Routes</h2>
+        <span className="count">{trip.routes.length}</span>
       </div>
       {trip.recommended_route_id === null ? (
         <p className="no-recommendation">No eligible route available.</p>
       ) : null}
-      <details className="recommendation">
-        <summary>
-          {recommendedTitle
-            ? `Why ${recommendedTitle} is recommended`
-            : 'Why no route is recommended'}
-        </summary>
-        <p>{trip.recommendation_reason}</p>
-      </details>
       <div className="route-options">
         {trip.routes.map((route, index) => (
           <RouteRow
@@ -53,10 +42,12 @@ export function RouteList({
           />
         ))}
       </div>
-      <p className="method-note">
-        Ranked by severe miles, high miles, average risk, then travel time. No travel routes are
-        excluded.
-      </p>
+      <details className="recommendation">
+        <summary>
+          {trip.recommended_route_id ? 'Why this route?' : 'Why no recommendation?'}
+        </summary>
+        <p>{trip.recommendation_reason}</p>
+      </details>
     </section>
   );
 }
@@ -78,40 +69,39 @@ export function RouteRow({
   const [title, ...roadParts] = route.label.split(' · ');
   return (
     <button
+      type="button"
       className={`route-row ${selected ? 'selected' : ''}`}
       onClick={onSelect}
       aria-pressed={selected}
-      aria-label={`Select ${route.label}${recommended ? ', recommended' : ''}`}
+      aria-label={`Select ${route.label}${recommended ? ', recommended' : ''}${route.summary.status === 'blocked' ? ', No Travel' : route.summary.status === 'incomplete' ? ', incomplete weather' : ''}`}
+      aria-describedby={`${route.id}-duration ${route.id}-distance ${route.id}-arrival ${route.id}-risk`}
     >
-      <div className="route-row-top">
+      <div className="route-row-header">
         <span className="route-name">
           <span className="route-number">{index + 1}</span>
-          {title}
+          <span>{title}</span>
+          {recommended ? <span className="recommended-tag">Recommended</span> : null}
         </span>
-        {recommended ? (
-          <span className="recommended-tag">
-            <Check size={13} aria-hidden="true" />
-            Recommended
-          </span>
-        ) : (
-          <ChevronRight size={17} aria-hidden="true" />
-        )}
+        <strong id={`${route.id}-duration`}>{formatDuration(route.duration_seconds)}</strong>
       </div>
-      {roadParts.length ? <p className="route-roads">{roadParts.join(' · ')}</p> : null}
-      <div className="route-time">
-        <strong>{formatDuration(route.duration_seconds)}</strong>
-        <span>{formatMiles(route.distance_meters)}</span>
+      <div className="route-subtitle">
+        <span className="route-roads">
+          {roadParts.length ? `${roadParts.join(' · ').replace(/\s*\/\s*/g, '/')} · ` : null}
+          <span id={`${route.id}-distance`}>{formatMiles(route.distance_meters)}</span>
+        </span>
+        <span className="route-arrival" id={`${route.id}-arrival`}>
+          <span className="sr-only">Arrive </span>
+          <time dateTime={route.summary.arrival_at}>
+            {formatTime(route.summary.arrival_at, timezone)}
+          </time>
+        </span>
       </div>
-      <p className="route-arrival">
-        <Clock3 size={14} aria-hidden="true" />
-        Arrive {formatTime(route.summary.arrival_at, timezone)}
-      </p>
-      <div className="risk-mileage">
+      <div className="risk-mileage" id={`${route.id}-risk`}>
         <span>
-          <strong>{route.summary.severe_miles.toFixed(1)}</strong> severe mi
+          <strong>{route.summary.severe_miles.toFixed(1)}</strong> Severe mi
         </span>
         <span>
-          <strong>{route.summary.high_miles.toFixed(1)}</strong> high mi
+          <strong>{route.summary.high_miles.toFixed(1)}</strong> High mi
         </span>
         <span>
           Avg <strong>{route.summary.average_risk?.toFixed(2) ?? '—'}</strong> / 4
@@ -126,7 +116,7 @@ export function RouteRow({
       {route.summary.status === 'incomplete' ? (
         <p className="route-warning unknown">
           <CircleAlert size={14} aria-hidden="true" />
-          Incomplete weather: recommendation unavailable
+          Incomplete weather · {route.summary.risk_miles.unknown.toFixed(1)} mi unknown
         </p>
       ) : null}
     </button>

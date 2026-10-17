@@ -18,14 +18,14 @@ export function CheckpointTable({
     <details className="checkpoints">
       <summary>
         <div>
-          <strong>Weather checkpoints</strong>
+          <strong>Checkpoints</strong>
           <span>
-            {route.label} · {route.checkpoints.length} checkpoints
+            {route.checkpoints.length} · {route.label}
           </span>
         </div>
         <ChevronDown size={18} aria-hidden="true" />
       </summary>
-      <div className="checkpoint-scroll">
+      <div className="checkpoint-scroll" role="region" aria-label="Checkpoint weather" tabIndex={0}>
         <table>
           <caption className="sr-only">
             Arrival-time weather and risk for {route.label}. Select a checkpoint to locate it on the
@@ -35,9 +35,9 @@ export function CheckpointTable({
             <tr>
               <th scope="col">Checkpoint</th>
               <th scope="col">ETA</th>
-              <th scope="col">Wind / gust</th>
-              <th scope="col">Rain</th>
-              <th scope="col">Snow</th>
+              <th scope="col">Wind / gust (mph)</th>
+              <th scope="col">Rain (in/hr)</th>
+              <th scope="col">Snow (in/hr)</th>
               <th scope="col">Risk</th>
               <th scope="col">Reason</th>
             </tr>
@@ -47,8 +47,10 @@ export function CheckpointTable({
               <tr key={checkpoint.id} className={selectedId === checkpoint.id ? 'active' : ''}>
                 <th scope="row">
                   <button
+                    type="button"
                     onClick={() => onSelect(checkpoint)}
                     aria-label={`Locate checkpoint ${index + 1}, ${formatMiles(checkpoint.distance_meters)}`}
+                    aria-pressed={selectedId === checkpoint.id}
                   >
                     <MapPin size={14} aria-hidden="true" />
                     <span>
@@ -57,22 +59,29 @@ export function CheckpointTable({
                     </span>
                   </button>
                 </th>
-                <td>{formatTime(checkpoint.eta, timezone)}</td>
+                <td>
+                  <time dateTime={checkpoint.eta}>{formatTime(checkpoint.eta, timezone)}</time>
+                </td>
                 <td>
                   {checkpoint.weather
-                    ? `${checkpoint.weather.wind_mph.toFixed(1)} / ${checkpoint.weather.gust_mph?.toFixed(1) ?? '—'} mph`
+                    ? `${checkpoint.weather.wind_mph.toFixed(1)} / ${checkpoint.weather.gust_mph?.toFixed(1) ?? '—'}`
                     : 'Unknown'}
                 </td>
-                <td>
-                  {checkpoint.weather ? `${checkpoint.weather.rain_in_hr.toFixed(2)} in/hr` : '—'}
-                </td>
-                <td>
-                  {checkpoint.weather ? `${checkpoint.weather.snow_in_hr.toFixed(2)} in/hr` : '—'}
-                </td>
+                <td>{checkpoint.weather ? checkpoint.weather.rain_in_hr.toFixed(2) : '—'}</td>
+                <td>{checkpoint.weather ? checkpoint.weather.snow_in_hr.toFixed(2) : '—'}</td>
                 <td>
                   <RiskBadge level={checkpoint.risk.level} />
                 </td>
-                <td>{checkpoint.risk.reasons.join('; ') || 'Below all risk thresholds.'}</td>
+                <td>
+                  <details className="checkpoint-reason">
+                    <summary aria-label={`Risk explanation for checkpoint ${index + 1}`}>
+                      Details
+                    </summary>
+                    <p>
+                      {checkpoint.risk.reasons.join('; ') || 'Within the supplied risk thresholds.'}
+                    </p>
+                  </details>
+                </td>
               </tr>
             ))}
           </tbody>
