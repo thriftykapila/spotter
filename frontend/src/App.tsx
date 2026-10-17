@@ -26,7 +26,12 @@ export default function App() {
   const [hour, setHour] = useState(0);
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [editing, setEditing] = useState(false);
-  const health = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 30_000 });
+  const health = useQuery({
+    queryKey: ['health'],
+    queryFn: getHealth,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
   const initial = useQuery({
     queryKey: ['initial-sample'],
     queryFn: () => planTrip(initialInput),
@@ -127,6 +132,7 @@ export default function App() {
                 onClick={() => {
                   setMode('live');
                   setEditing(true);
+                  void health.refetch();
                 }}
               >
                 Live routes
@@ -151,6 +157,13 @@ export default function App() {
                       : 'Routing credentials and shared storage are required.'}{' '}
                   The sample trip works without credentials.
                 </p>
+                <button
+                  className="secondary"
+                  disabled={health.isFetching}
+                  onClick={() => void health.refetch()}
+                >
+                  {health.isFetching ? 'Checking service…' : 'Recheck service'}
+                </button>
               </div>
             ) : (
               <p className="mode-description">

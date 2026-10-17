@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { getCorridor, getHealth, planTrip } from './api';
@@ -93,13 +93,17 @@ const corridor: Corridor = {
 };
 function renderApp() {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, refetchOnWindowFocus: false },
+      mutations: { retry: false },
+    },
   });
-  return render(
+  const view = render(
     <QueryClientProvider client={client}>
       <App />
     </QueryClientProvider>,
   );
+  return { ...view, client };
 }
 beforeEach(() => {
   vi.resetAllMocks();
@@ -110,7 +114,73 @@ beforeEach(() => {
   vi.mocked(planTrip).mockResolvedValue(trip);
   vi.mocked(getCorridor).mockResolvedValue(corridor);
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  focusManager.setFocused(undefined);
+});
+
+describe('live service availability', () => {
+  it('refreshes on entering Live and can recheck without losing the form or assessment', async () => {
+    renderApp();
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    expect(getHealth).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Live routes' }));
+    await waitFor(() => expect(getHealth).toHaveBeenCalledTimes(2));
+    const recheck = await screen.findByRole('button', { name: 'Recheck service' });
+    const compare = screen.getByRole('button', { name: 'Compare routes' });
+    expect(compare).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Departure date & time'), {
+      target: { value: '2026-10-19T09:15' },
+    });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Load weight lb' }), {
+      target: { value: '43000' },
+    });
+    fireEvent.click(screen.getByRole('radio', { name: '50 miles' }));
+    const selected = screen.getByRole('button', { name: /^Select Route A/ });
+    fireEvent.click(selected);
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '24' } });
+
+    let finishHealth!: (value: Awaited<ReturnType<typeof getHealth>>) => void;
+    vi.mocked(getHealth).mockImplementationOnce(
+      () => new Promise((resolve) => (finishHealth = resolve)),
+    );
+    fireEvent.click(recheck);
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Checking service…' })).toBeDisabled(),
+    );
+    await act(async () => finishHealth({ live_available: true, missing_configuration: [] }));
+
+    await screen.findByText('Live service ready');
+    expect(screen.queryByRole('button', { name: 'Recheck service' })).not.toBeInTheDocument();
+    expect(compare).toBeEnabled();
+    expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('Denver, CO');
+    expect(screen.getByRole('combobox', { name: 'Destination' })).toHaveValue('Kansas City, MO');
+    expect(screen.getByLabelText('Departure date & time')).toHaveValue('2026-10-19T09:15');
+    expect(screen.getByRole('spinbutton', { name: 'Load weight lb' })).toHaveValue(43000);
+    expect(screen.getByRole('radio', { name: '50 miles' })).toBeChecked();
+    expect(selected).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('slider')).toHaveValue('24');
+    expect(getHealth).toHaveBeenCalledTimes(3);
+    expect(planTrip).toHaveBeenCalledTimes(1);
+    expect(getCorridor).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes stale health on focus without refetching the trip or corridor', async () => {
+    vi.mocked(getHealth)
+      .mockResolvedValueOnce({ live_available: false, missing_configuration: ['TOMTOM_API_KEY'] })
+      .mockResolvedValueOnce({ live_available: true, missing_configuration: [] });
+    const { client } = renderApp();
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    await screen.findByText('Sample mode ready');
+    focusManager.setFocused(false);
+    await client.invalidateQueries({ queryKey: ['health'], refetchType: 'none' });
+    await act(async () => focusManager.setFocused(true));
+    await screen.findByText('Live service ready');
+    expect(getHealth).toHaveBeenCalledTimes(2);
+    expect(planTrip).toHaveBeenCalledTimes(1);
+    expect(getCorridor).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('corridor forecast retry', () => {
   it.each(['error', 'warnings', 'unknown'] as const)(
