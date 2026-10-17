@@ -4,6 +4,12 @@ Compare truck routes using the weather expected **when the truck reaches each ch
 React + TypeScript on the frontend, Django on the backend. The interface puts the trip form,
 route comparison, map, and forecast timeline in one workspace.
 
+**[Open the hosted application](https://spotter-web-swart.vercel.app)** ·
+**[GitHub repository](https://github.com/thriftykapila/spotter)**
+
+The hosted sample is ready. Live routing stays disabled until the free TomTom and Upstash
+accounts are verified and their backend credentials are configured.
+
 ## Run locally
 
 Requires Node 24 LTS, Python 3.13, and [uv](https://docs.astral.sh/uv/).
@@ -81,7 +87,12 @@ sequence. No Loom recording is included yet.
 - [Open-Meteo forecast documentation](https://open-meteo.com/en/docs)
 - [TomTom pricing](https://docs.tomtom.com/pricing)
 - [Open-Meteo terms](https://open-meteo.com/en/terms)
+- [Natural Earth public-domain geography](https://www.naturalearthdata.com/about/terms-of-use/)
 
 The credential-free sample contains synthetic route geometry and synthetic weather. It is intended
 for reproducible review, not driving directions. Provider/map attribution is retained in the app.
 Live weather uses Open-Meteo's noncommercial evaluation service; commercial use needs an appropriate plan.
+
+The keyless overview map bundles Natural Earth land and state boundaries with a small local city
+label set. No external basemap request is needed for the sample. It does not contain street-level
+navigation detail; a separate restricted map-display key enables the TomTom street basemap.

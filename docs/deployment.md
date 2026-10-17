@@ -5,6 +5,10 @@ Vercel Hobby and the selected weather service are for a personal noncommercial d
 
 ## Backend first
 
+Current API preview: `https://spotter-131xcf7oy-xeli-staging.vercel.app`.
+Current public frontend: [spotter-web-swart.vercel.app](https://spotter-web-swart.vercel.app).
+Both projects are on the existing `xeli-staging` Hobby workspace.
+
 1. Import `thriftykapila/spotter` in Vercel. Set the root directory to `backend` and framework to Django.
 2. Select Python 3.13. The repository uses a uv lockfile and `config.wsgi:application` entrypoint.
 3. Set `DJANGO_SECRET_KEY` to a newly generated random secret in Vercel environment settings.
@@ -62,6 +66,22 @@ the slider makes no requests. Redis unavailability stops live upstream requests;
 Cold starts and third-party response times remain possible. Free-tier quota exhaustion can pause
 features. Check account dashboards before recording the walkthrough. A custom domain is optional;
 Vercel preview/project domains are sufficient for evaluation.
+
+Git-triggered Vercel deployments are explicitly disabled in both configs while provider setup is
+pending. GitHub Actions still runs on pushes. Deploy previews deliberately with `--target preview`
+and the matching project ID from the repository root; deployment settings use the backend/frontend
+root directories. After any backend preview changes, run the rewrite configuration script again.
+
+## Stay on free plans
+
+- Use Vercel Hobby and Upstash Free. Do not attach billing or choose a paid/trial plan.
+- Keep TomTom billing unconfigured; use only the routing/geocoding products needed by Spotter.
+- The shared TomTom guard allows at most 500 routing/geocoding calls combined per UTC day,
+  including retries. Even a 31-day month stays at 15,500, below either 20,000-request free allowance.
+- Open-Meteo is guarded at 550 weighted locations/minute, 4,500/hour, and 9,000/day.
+- Provider denial, exhausted budgets, or Redis failure stops live work instead of bypassing limits.
+- Provider account dashboards remain authoritative for usage. Requests made outside this app
+  are not counted by Spotter's guards. Keep these new account credentials dedicated to this project.
 
 Sources: [Django on Vercel](https://vercel.com/docs/frameworks/full-stack/django),
 [function limits](https://vercel.com/docs/functions/limitations),
