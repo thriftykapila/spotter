@@ -1451,3 +1451,14 @@ input::placeholder {
     gap: 8px;
   }
 }
+
+@media (max-width: 560px) {
+  .forecast-info > summary {
+    width: 44px;
+    height: 44px;
+  }
+  .maplibregl-popup-close-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
