@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, MapPin, Search } from 'lucide-react';
+import { ArrowRight, ChevronDown, MapPin, Search } from 'lucide-react';
 import { geocode } from './api';
 import { localDepartureToUTC, nextDeparture, type OffsetChoice } from './time';
 import type { Location, PlanInput } from './types';
@@ -253,22 +253,24 @@ export function TripForm({
           Clear trip
         </button>
       </div>
-      <LocationField
-        key={`origin-${resetKey}`}
-        label="Origin"
-        name="origin"
-        error={error?.field === 'origin' ? error.message : undefined}
-        selected={values.origin}
-        onSelected={(value) => update('origin', value)}
-      />
-      <LocationField
-        key={`destination-${resetKey}`}
-        label="Destination"
-        name="destination"
-        error={error?.field === 'destination' ? error.message : undefined}
-        selected={values.destination}
-        onSelected={(value) => update('destination', value)}
-      />
+      <div className="location-fields">
+        <LocationField
+          key={`origin-${resetKey}`}
+          label="Origin"
+          name="origin"
+          error={error?.field === 'origin' ? error.message : undefined}
+          selected={values.origin}
+          onSelected={(value) => update('origin', value)}
+        />
+        <LocationField
+          key={`destination-${resetKey}`}
+          label="Destination"
+          name="destination"
+          error={error?.field === 'destination' ? error.message : undefined}
+          selected={values.destination}
+          onSelected={(value) => update('destination', value)}
+        />
+      </div>
       <div className="field">
         <div className="field-label-row">
           <label htmlFor="departure">Departure date & time</label>
@@ -338,20 +340,23 @@ export function TripForm({
         </div>
         <div className="field spacing-field">
           <label htmlFor="spacing">Checkpoint spacing</label>
-          <select
-            id="spacing"
-            name="spacing"
-            value={values.spacing}
-            onChange={(event) =>
-              update('spacing', Number(event.target.value) as FormValues['spacing'])
-            }
-          >
-            {([10, 25, 50] as const).map((spacing) => (
-              <option key={spacing} value={spacing}>
-                {spacing} miles
-              </option>
-            ))}
-          </select>
+          <div className="select-with-icon">
+            <select
+              id="spacing"
+              name="spacing"
+              value={values.spacing}
+              onChange={(event) =>
+                update('spacing', Number(event.target.value) as FormValues['spacing'])
+              }
+            >
+              {([10, 25, 50] as const).map((spacing) => (
+                <option key={spacing} value={spacing}>
+                  {spacing} miles
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} aria-hidden="true" />
+          </div>
         </div>
       </div>
       <button className="primary" type="submit" disabled={pending || !liveAvailable}>
