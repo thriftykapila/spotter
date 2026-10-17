@@ -95,6 +95,10 @@ test('editing the example submits live routing with the selected load and spacin
 });
 
 test('risk hints hide zeroes and follow the visible route list', async ({ page, isMobile }) => {
+  // Exercise the smaller route viewport used when live credentials are unavailable.
+  await page.route('**/api/health', (route) =>
+    route.fulfill({ json: { live_available: false, missing_configuration: ['TOMTOM_API_KEY'] } }),
+  );
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Routes', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Severe 0|^High 0/ })).toHaveCount(0);
@@ -111,6 +115,8 @@ test('risk hints hide zeroes and follow the visible route list', async ({ page, 
     await page.setViewportSize({ width: 1280, height: 600 });
     await high.click();
     await expect(tooltip).toBeVisible();
+    // Keep focus on the first stat, but don't hover a different stat as the list moves.
+    await page.getByRole('heading', { name: 'Trip planner', exact: true }).hover();
     const formTop = (await page.locator('.trip-form').boundingBox())!.y;
     await page.locator('.route-options').evaluate((element) => {
       element.scrollTop = element.scrollHeight;

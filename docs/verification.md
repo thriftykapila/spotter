@@ -109,6 +109,13 @@ Measured text/background contrast ratios: Low 5.70:1, Moderate 5.55:1, High 5.21
 No Travel 12.23:1, Unknown 4.88:1. The focus token contrasts 6.16:1 against white.
 Average colors are presentation bands, not a classification of the route's worst conditions.
 
+The deployed [risk-color preview](https://spotter-775a6fbgw-xeli-staging.vercel.app/) matched these
+values and colors. Its 1440×1000 workspace had 936px sidebar content in 936px available, with
+all three cards visible. The public application alias points to this deployment.
+The browser regression also covers the smaller route viewport when live routes are unavailable;
+it moves the pointer away before scrolling so a newly hovered stat does not obscure dismissal
+of the original tooltip. The README screenshot reflects the deployed interface.
+
 ## Remaining delivery item
 
 The [seven-minute walkthrough script](walkthrough.md) is ready. A Loom recording and upload have
