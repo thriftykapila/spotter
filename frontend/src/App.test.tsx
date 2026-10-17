@@ -141,7 +141,6 @@ describe('unified trip planner', () => {
       });
     renderApp();
     await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
-    expect(screen.getByText('Sample trip', { exact: true })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Data source' })).not.toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Origin' })).not.toHaveAttribute('readonly');
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Load weight lb' }), {
@@ -165,7 +164,6 @@ describe('unified trip planner', () => {
       }),
     );
     expect(screen.getByRole('form', { name: 'Plan your trip' })).toBeVisible();
-    expect(screen.queryByText('Sample trip', { exact: true })).not.toBeInTheDocument();
   });
 
   it('clears typed locations and every displayed result while retaining trip controls', async () => {
@@ -198,19 +196,6 @@ describe('unified trip planner', () => {
     expect(screen.getByRole('slider')).toBeDisabled();
     expect(screen.getByRole('slider')).toHaveValue('0');
     expect(planTrip).toHaveBeenCalledTimes(1);
-  });
-
-  it('restores the example after clearing without adding a source selector', async () => {
-    renderApp();
-    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Clear trip' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Load example' }));
-    await screen.findByText('Sample trip', { exact: true });
-    expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('Denver, CO');
-    expect(screen.getByRole('combobox', { name: 'Destination' })).toHaveValue('Kansas City, MO');
-    expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-trip-id', trip.id);
-    expect(planTrip).toHaveBeenCalledTimes(2);
-    expect(planTrip).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'sample' }));
   });
 
   it.each(['initial example', 'live request'] as const)(

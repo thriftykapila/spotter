@@ -21,9 +21,9 @@ make install
 make dev
 ```
 
-Open http://127.0.0.1:5173. The clearly labeled synthetic Denver–Kansas City trip works without
-API keys or Redis. The form stays editable: **Find routes** requests live data, **Clear trip**
-removes the current trip, and **Load example** restores the example. There is no sample/live switch.
+Open http://127.0.0.1:5173. The synthetic Denver–Kansas City trip loads by default and works without
+API keys or Redis. The form stays editable: **Find routes** requests live data, and **Clear trip**
+removes the current trip. There is no sample/live switch.
 
 For live routes, copy `backend/.env.example` to `backend/.env` and configure:
 

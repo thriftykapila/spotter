@@ -16,7 +16,6 @@ test('sample route comparison, arrival weather, and local forecast scrubbing', a
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Routes' })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(3);
-  await expect(page.getByText('Sample trip', { exact: true })).toBeVisible();
   await expect(page.getByRole('form', { name: 'Plan your trip' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Data source' })).toHaveCount(0);
   const slider = page.getByRole('slider', { name: 'Forecast hour after departure' });
@@ -89,14 +88,13 @@ test('editing the example submits live routing with the selected load and spacin
   await page.getByLabel('Load weight', { exact: false }).fill('45000');
   await page.getByRole('combobox', { name: 'Checkpoint spacing' }).selectOption('10');
   await page.getByRole('button', { name: 'Find routes', exact: true }).click();
-  await expect(page.getByText('Sample trip', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(3);
   expect(liveInput).toMatchObject({ mode: 'live', load_lb: 45000, spacing_miles: 10 });
   await expect(page.getByRole('form', { name: 'Plan your trip' })).toBeVisible();
   await expect(page.getByRole('slider')).toHaveValue('0');
 });
 
-test('clear removes the example and load example restores it', async ({ page }) => {
+test('clear removes the example and keeps the trip controls', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('slider')).toBeEnabled();
   await page.getByLabel('Load weight', { exact: false }).fill('41000');
@@ -109,12 +107,6 @@ test('clear removes the example and load example restores it', async ({ page }) 
   await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(0);
   await expect(page.getByText('Checkpoints', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('slider')).toBeDisabled();
-  await page.getByRole('button', { name: 'Load example', exact: true }).click();
-  await expect(page.getByText('Sample trip', { exact: true })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Origin', exact: true })).toHaveValue(
-    'Denver, CO',
-  );
-  await expect(page.getByRole('button', { name: /^Select / })).toHaveCount(3);
   const width = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     viewport: innerWidth,

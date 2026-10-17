@@ -107,8 +107,7 @@ svg {
   background: white;
   gap: 16px;
 }
-.brand,
-.header-actions {
+.brand {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -121,9 +120,6 @@ svg {
   margin-inline-start: 12px;
   color: var(--muted);
   font-size: 13px;
-}
-.header-actions {
-  gap: 20px;
 }
 .service-status {
   display: flex;
@@ -143,32 +139,26 @@ svg {
 }
 .primary,
 .secondary,
-.clear-trip,
-.example-action {
+.clear-trip {
   min-height: 44px;
   border-radius: var(--radius);
   font-size: 14px;
   font-weight: 600;
 }
 .secondary,
-.clear-trip,
-.example-action {
+.clear-trip {
   padding: 9px 13px;
   border: 1px solid var(--border);
   background: white;
 }
 .secondary:hover,
-.clear-trip:hover,
-.example-action:hover {
+.clear-trip:hover {
   background: #f5f7fa;
   border-color: #b7c2d2;
 }
 .clear-trip {
   color: var(--muted);
   font-weight: 500;
-}
-.example-action {
-  color: var(--blue);
 }
 .primary {
   display: flex;
@@ -230,7 +220,6 @@ svg {
   gap: 8px;
   align-items: center;
 }
-.example-badge,
 .data-badge {
   display: inline-flex;
   align-items: center;
@@ -243,7 +232,6 @@ svg {
   font-weight: 500;
   white-space: nowrap;
 }
-.example-badge.live,
 .data-badge.live {
   color: #21684e;
   background: #eaf5ef;
@@ -1164,14 +1152,6 @@ tbody small {
   .brand strong {
     font-size: 21px;
   }
-  .header-actions .secondary,
-  .example-action {
-    font-size: 12px;
-    padding-inline: 11px;
-  }
-  .header-actions {
-    gap: 6px;
-  }
   .trip-form {
     padding: 18px 16px;
   }
@@ -1297,12 +1277,6 @@ tbody small {
   padding-inline: 8px;
   font-size: 12px;
   text-decoration: none;
-}
-.header-actions .example-action {
-  text-decoration: none;
-  border: 1px solid var(--border);
-  padding-inline: 12px;
-  min-height: 40px;
 }
 .field-label-row {
   display: flex;
@@ -1433,15 +1407,6 @@ input::placeholder {
   margin-block-end: 12px;
 }
 @media (max-width: 560px) {
-  .header-actions .example-action {
-    min-height: 44px;
-    padding-inline: 8px;
-    font-size: 12px;
-  }
-  .header-actions .example-badge {
-    font-size: 10px;
-    padding-inline: 6px;
-  }
   .brand {
     gap: 8px;
   }

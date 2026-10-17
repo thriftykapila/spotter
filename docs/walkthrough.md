@@ -1,14 +1,14 @@
 # Seven-minute Loom walkthrough
 
-Use the labeled synthetic trip for reproducibility, then show a live trip if credentials are configured.
+Use the default synthetic trip for reproducibility, then show a live trip if credentials are configured.
 The app now has one editable form. Find routes always requests live data; Clear trip removes the
-example and Load example restores it. There is no sample/live tab selector.
+example. There is no sample/live tab selector.
 Keep the browser at a readable desktop width. The route comparison, map, and timeline should remain
 visible together. Do not show secret environment values or account tokens while recording.
 
 | Time | Show and explain |
 | --- | --- |
-| 0:00–0:40 | State the problem: route weather must match arrival time. Introduce origin, destination, departure, load, and spacing. Point out the synthetic-demo label. |
+| 0:00–0:40 | State the problem: route weather must match arrival time. Introduce origin, destination, departure, load, and spacing. Explain that the initial example uses synthetic data. |
 | 0:40–1:40 | Compare the three routes. Explain the recommendation using Severe miles, High miles, average risk, then time. Select another route and show its highlighted geometry. |
 | 1:40–2:40 | Select a checkpoint. Show its distance, ETA, sustained wind/gust, rain, snowfall, risk, and explanation. Open the accessible checkpoint list. |
 | 2:40–3:30 | Inspect the blocked sample route and explain its wind/load rule. Edit the load and use Find routes to request live weather. Explain why No Travel options are excluded; actual weather may leave the risk band unchanged. |

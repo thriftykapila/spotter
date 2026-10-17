@@ -104,12 +104,6 @@ export default function App() {
         <a className="brand" href="/" aria-label="Spotter home">
           <strong>spotter</strong>
         </a>
-        <div className="header-actions">
-          {trip?.mode === 'sample' ? <span className="example-badge">Sample trip</span> : null}
-          <button className="example-action text-button" onClick={loadExample} disabled={pending}>
-            Load example
-          </button>
-        </div>
       </header>
       <main className="workspace">
         <aside className="sidebar" id="trip-controls">

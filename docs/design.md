@@ -11,13 +11,13 @@ Spotter is a practical route planning workspace. The map and route comparison ar
 - Same checkpoint information is available in an accessible list.
 - Mobile stacks form, summaries, map, and checkpoint details; test 375px and 200% zoom.
 - No hero, decorative gradients, patterns, glass, fake metrics, nested cards or entrance animation.
-- Synthetic demo is labeled persistently. Live failures never silently become sample weather.
+- Synthetic demo data is disclosed. Live failures never silently become sample weather.
 
 ## Planning flow
 
-The app opens with an example Denver–Kansas City trip. A small Sample trip badge identifies it.
+The app opens with an example Denver–Kansas City trip.
 There is one editable form and no sample/live navigation. Find routes always requests live routing;
-Clear trip removes the example, inputs, routes, checkpoints, and forecast. Load example restores it.
+Clear trip removes the example, inputs, routes, checkpoints, and forecast.
 Clearing must also ignore an older in-flight request so sample results cannot reappear unexpectedly.
 
 Keep the form visible beside compact route rows and a large map. Use a consistent control system:
