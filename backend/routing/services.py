@@ -6,6 +6,8 @@ import json
 import math
 import platform
 import uuid
+from base64 import urlsafe_b64decode, urlsafe_b64encode
+from binascii import Error as Base64Error
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
@@ -73,7 +75,10 @@ def plan_sample(data):
     created = datetime.now(UTC)
     params = {"departure_at": _iso(data["departure_at"]), "load_lb": data["load_lb"],
               "spacing_miles": data["spacing_miles"], "created_at": _iso(created)}
-    identifier = "sample_" + signing.dumps(params, salt=SAMPLE_SALT, compress=True)
+    signed = signing.dumps(params, salt=SAMPLE_SALT, compress=True)
+    # External CDN rewrites can escape percent-encoded ':' separators twice. Keep the
+    # opaque identifier entirely URL-unreserved while retaining Django's signature.
+    identifier = "sample_" + urlsafe_b64encode(signed.encode("ascii")).decode("ascii").rstrip("=")
     trip = sample_trip(data["departure_at"], data["load_lb"], data["spacing_miles"])
     trip.update({"id": identifier, "mode": "sample", "weather_fetched_at": _iso(created),
                  "expires_at": _iso(created + timedelta(minutes=15))})
@@ -82,7 +87,9 @@ def plan_sample(data):
 
 def _sample_from_id(identifier):
     try:
-        params = signing.loads(identifier.removeprefix("sample_"), salt=SAMPLE_SALT, max_age=900)
+        encoded = identifier.removeprefix("sample_")
+        signed = urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)).decode("ascii")
+        params = signing.loads(signed, salt=SAMPLE_SALT, max_age=900)
         departure = datetime.fromisoformat(params["departure_at"])
         created = datetime.fromisoformat(params["created_at"])
         if (departure.utcoffset() is None or created.utcoffset() is None
@@ -91,7 +98,7 @@ def _sample_from_id(identifier):
             raise ValueError("invalid signed sample parameters")
         if created + timedelta(minutes=15) <= datetime.now(UTC):
             raise signing.SignatureExpired("expired sample")
-    except (signing.BadSignature, KeyError, TypeError, ValueError):
+    except (signing.BadSignature, KeyError, TypeError, ValueError, UnicodeError, Base64Error):
         raise RoutingError(
             "TRIP_EXPIRED", "This trip has expired or could not be found. Plan it again.", 404
         ) from None
