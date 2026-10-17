@@ -5,7 +5,7 @@ Vercel Hobby and the selected weather service are for a personal noncommercial d
 
 ## Backend first
 
-Current API preview: `https://spotter-131xcf7oy-xeli-staging.vercel.app`.
+Current API preview: `https://spotter-8odc20zxs-xeli-staging.vercel.app`.
 Current public frontend: [spotter-web-swart.vercel.app](https://spotter-web-swart.vercel.app).
 Both projects are on the existing `xeli-staging` Hobby workspace.
 
@@ -37,7 +37,7 @@ Native Shapely/pyproj/timezonefinder imports must pass on Linux before declaring
 4. Commit the rewrite change and deploy the frontend. The browser calls `/api/*` on its own origin.
 5. Optionally set `VITE_TOMTOM_MAP_KEY` to a separate browser-restricted Map Display key.
 
-The initial rewrite hostname is a placeholder until configured. Never point it to a different owner's
+The committed rewrite points to the verified API preview above. Never point it to a different owner's
 unverified application. Preview URLs may need deployment protection adjusted for evaluator access
 and frontend-to-backend rewrites. Account-owned stable URLs are preferred for final submission.
 
@@ -80,6 +80,10 @@ root directories. After any backend preview changes, run the rewrite configurati
   including retries. Even a 31-day month stays at 15,500, below either 20,000-request free allowance.
 - Open-Meteo is guarded at 550 weighted locations/minute, 4,500/hour, and 9,000/day.
 - Provider denial, exhausted budgets, or Redis failure stops live work instead of bypassing limits.
+- Provider daily caps do not limit Redis cache-hit commands or bandwidth. Keep Upstash on its
+  actual Free plan with billing unconfigured; this account setting protects against paid overages.
+  Exhausting its command, storage, or bandwidth allowance can pause live planning. The signed
+  sample trip continues to work without Redis.
 - Provider account dashboards remain authoritative for usage. Requests made outside this app
   are not counted by Spotter's guards. Keep these new account credentials dedicated to this project.
 
