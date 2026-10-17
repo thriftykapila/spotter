@@ -25,6 +25,7 @@ TIME_ZONE = "UTC"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "routing.views.exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "UNAUTHENTICATED_USER": None,
