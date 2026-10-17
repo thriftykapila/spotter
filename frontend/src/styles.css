@@ -1462,3 +1462,9 @@ input::placeholder {
     min-height: 44px;
   }
 }
+
+@media (max-width: 860px) {
+  .route-options {
+    grid-template-columns: 1fr;
+  }
+}
