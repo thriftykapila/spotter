@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { CircleAlert, CloudSun, Route as RouteIcon } from 'lucide-react';
 import { getCorridor, getHealth, planTrip } from './api';
@@ -52,6 +52,16 @@ export default function App() {
     enabled: Boolean(trip),
     staleTime: 14 * 60_000,
   });
+  const hasUnknownForecast = useMemo(
+    () =>
+      corridor.data?.cells.features.some((cell) =>
+        cell.properties.risks.some((risk) => risk === null),
+      ) ?? false,
+    [corridor.data],
+  );
+  const canRetryForecast =
+    Boolean(trip) &&
+    (corridor.isError || (corridor.data?.warnings.length ?? 0) > 0 || hasUnknownForecast);
   const pending = plan.isPending || initial.isPending;
   const selectRoute = (id: string) => {
     setSelectedId(id);
@@ -206,7 +216,7 @@ export default function App() {
                   className="text-button"
                   onClick={() => (plan.isError ? plan.reset() : initial.refetch())}
                 >
-                  Dismiss or retry
+                  {plan.isError ? 'Dismiss error' : 'Retry sample trip'}
                 </button>
               </div>
             </div>
@@ -283,6 +293,21 @@ export default function App() {
             <p className="corridor-warning" role="status">
               {corridor.data.warnings.join(' ')}
             </p>
+          ) : null}
+          {canRetryForecast ? (
+            <div className="corridor-warning" role="status">
+              <p>
+                {hasUnknownForecast ? 'Some corridor forecast values are unknown. ' : ''}
+                Retry the forecast without changing the route assessment or recommendation.
+              </p>
+              <button
+                className="secondary"
+                disabled={corridor.isFetching}
+                onClick={() => void corridor.refetch()}
+              >
+                {corridor.isFetching ? 'Retrying forecast…' : 'Retry forecast'}
+              </button>
+            </div>
           ) : null}
           {selectedRoute && trip ? (
             <CheckpointTable
