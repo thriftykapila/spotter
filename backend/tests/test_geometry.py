@@ -88,8 +88,12 @@ def test_segments_follow_bends_instead_of_cutting_between_checkpoints():
     for checkpoint in route["checkpoints"]:
         checkpoint["risk"] = {"level": "low", "score": 0, "reasons": []}
     features = segments_for_route(route)["features"]
-    assert features[0]["geometry"]["coordinates"][-1] == [-103, 40]
-    assert features[1]["geometry"]["coordinates"][0] == [-103, 40]
+    assert features[0]["geometry"]["coordinates"][-1] == pytest.approx(
+        [-103, 40], abs=1e-10, rel=0
+    )
+    assert features[1]["geometry"]["coordinates"][0] == pytest.approx(
+        [-103, 40], abs=1e-10, rel=0
+    )
     assert features[0]["properties"]["start_checkpoint_id"] == "a-cp-0"
 
 
