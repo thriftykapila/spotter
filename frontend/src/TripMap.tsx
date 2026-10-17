@@ -113,10 +113,13 @@ function source(map: maplibregl.Map, id: string, data: FeatureCollection) {
   else map.addSource(id, { type: 'geojson', data });
 }
 function fitRoute(map: maplibregl.Map, trip: Trip, id: string) {
-  const route = trip.routes.find((item) => item.id === id) ?? trip.routes[0];
-  if (!route?.geometry.coordinates.length) return;
+  const selected = trip.routes.find((item) => item.id === id);
+  const routes = selected ? [selected] : trip.routes;
+  if (!routes.some((route) => route.geometry.coordinates.length)) return;
   const bounds = new maplibregl.LngLatBounds();
-  route.geometry.coordinates.forEach((point) => bounds.extend([point[0], point[1]]));
+  routes.forEach((route) =>
+    route.geometry.coordinates.forEach((point) => bounds.extend([point[0], point[1]])),
+  );
   map.fitBounds(bounds, {
     padding: { top: 70, right: 55, bottom: 55, left: 55 },
     maxZoom: 10,
@@ -168,6 +171,7 @@ function TripMap({
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const fittedTrip = useRef('');
   const latest = useRef({ trip, corridor, hour, onRouteSelect, onCheckpointSelect });
   latest.current = { trip, corridor, hour, onRouteSelect, onCheckpointSelect };
   const [ready, setReady] = useState(false);
@@ -385,6 +389,7 @@ function TripMap({
   }, [ready, hour, showHeatmap]);
   useEffect(() => {
     const map = mapRef.current;
+    if (!trip) fittedTrip.current = '';
     if (!ready || !map || !trip || !map.getLayer('selected-casing')) return;
     map.setPaintProperty('selected-casing', 'line-opacity', [
       'case',
@@ -405,7 +410,8 @@ function TripMap({
       0.6,
     ]);
     popupRef.current?.remove();
-    fitRoute(map, trip, selectedId);
+    fitRoute(map, trip, fittedTrip.current === trip.id ? selectedId : '');
+    fittedTrip.current = trip.id;
   }, [ready, selectedId, trip]);
   useEffect(() => {
     const map = mapRef.current;
@@ -428,10 +434,7 @@ function TripMap({
         <div className="map-fallback" role="status">
           <MapPin size={28} aria-hidden="true" />
           <strong>Interactive map unavailable</strong>
-          <p>
-            Your browser could not start WebGL. Route comparisons and every weather checkpoint
-            remain available below.
-          </p>
+          <p>Routes and checkpoints are still available below.</p>
         </div>
       ) : null}
       {!failed ? (
@@ -442,6 +445,7 @@ function TripMap({
           </div>
           <button
             className="map-fit"
+            disabled={!trip}
             onClick={() => {
               if (mapRef.current && trip) fitRoute(mapRef.current, trip, selectedId);
             }}
@@ -460,15 +464,7 @@ function TripMap({
           </span>
         ))}
       </div>
-      {!import.meta.env.VITE_TOMTOM_MAP_KEY || basemapFailed ? (
-        <div className="basemap-note">
-          {basemapFailed
-            ? 'Basemap unavailable · Route overlays remain available'
-            : trip?.mode === 'live'
-              ? 'Local overview map · Planning aid, not turn-by-turn navigation'
-              : 'Local overview map · Synthetic routes are not for navigation'}
-        </div>
-      ) : null}
+      {basemapFailed ? <div className="basemap-note">Street map unavailable</div> : null}
     </div>
   );
 }
