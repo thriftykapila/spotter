@@ -18,6 +18,14 @@ export const riskColors: Record<RiskLevel, string> = {
   unknown: '#8a929d',
 };
 export const riskByScore: RiskLevel[] = ['low', 'moderate', 'high', 'severe', 'no_travel'];
+
+// Presentation bands for a distance-weighted average, not a safety classification.
+// Eligibility and the route's worst conditions still come from the backend.
+export function averageRiskTone(score: number | null): RiskLevel {
+  if (score === null || !Number.isFinite(score) || score < 0 || score > 4) return 'unknown';
+  return riskByScore[Math.floor(score)];
+}
+
 export const levelColorExpression: ExpressionSpecification = [
   'match',
   ['get', 'level'],

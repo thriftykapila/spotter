@@ -11,7 +11,7 @@ import {
   riskNames,
 } from './risk';
 import { formatTime } from './time';
-import type { Checkpoint, Corridor, Trip } from './types';
+import type { Checkpoint, Corridor, RiskLevel, Trip } from './types';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 
@@ -126,12 +126,19 @@ function fitRoute(map: maplibregl.Map, trip: Trip, id: string) {
     duration: 0,
   });
 }
+function riskTitleNode(level: RiskLevel, context: 'risk' | 'corridor risk') {
+  const title = document.createElement('strong');
+  title.className = `risk-badge risk-${level}`;
+  const dot = document.createElement('span');
+  dot.className = 'risk-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  title.append(dot, `${riskNames[level]} ${context}`);
+  return title;
+}
 function checkpointNode(checkpoint: Checkpoint, timezone: string) {
   const div = document.createElement('div');
   div.className = 'map-popup';
-  const title = document.createElement('strong');
-  title.textContent = `${riskNames[checkpoint.risk.level]} risk`;
-  div.append(title);
+  div.append(riskTitleNode(checkpoint.risk.level, 'risk'));
   const eta = document.createElement('p');
   eta.textContent = `ETA ${formatTime(checkpoint.eta, timezone)}`;
   div.append(eta);
@@ -247,11 +254,10 @@ function TripMap({
         popupRef.current?.remove();
         const index = latest.current.hour;
         const risk = cell.properties.risks[index];
+        const level = risk === null ? 'unknown' : (riskByScore[risk] ?? 'unknown');
         const div = document.createElement('div');
         div.className = 'map-popup';
-        const title = document.createElement('strong');
-        title.textContent = `${risk === null ? 'Unknown' : riskNames[riskByScore[risk]]} corridor risk`;
-        div.append(title);
+        div.append(riskTitleNode(level, 'corridor risk'));
         const text = document.createElement('p');
         text.textContent = `+${index} hr · Wind ${cell.properties.wind_mph[index]?.toFixed(1) ?? 'unknown'} mph · Rain ${cell.properties.rain_in_hr[index]?.toFixed(2) ?? 'unknown'} in/hr · Snow ${cell.properties.snow_in_hr[index]?.toFixed(2) ?? 'unknown'} in/hr`;
         div.append(text);

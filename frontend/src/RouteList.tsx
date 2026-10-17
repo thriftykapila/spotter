@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react';
 import { formatDuration, formatMiles, formatTime } from './time';
-import { riskNames } from './risk';
+import { averageRiskTone, riskNames } from './risk';
 import type { RiskLevel, Route, Trip } from './types';
 import { MetricTooltip } from './MetricTooltip';
 
@@ -67,6 +67,8 @@ export function RouteRow({
   timezone: string;
 }) {
   const [title, ...roadParts] = route.label.split(' · ');
+  const { severe_miles, high_miles, average_risk } = route.summary;
+  const hasRiskStats = severe_miles > 0 || high_miles > 0 || average_risk !== 0;
   return (
     <article className={`route-row ${selected ? 'selected' : ''}`}>
       <button
@@ -75,7 +77,7 @@ export function RouteRow({
         onClick={onSelect}
         aria-pressed={selected}
         aria-label={`Select ${route.label}${recommended ? ', recommended' : ''}${route.summary.status === 'blocked' ? ', No Travel' : route.summary.status === 'incomplete' ? ', incomplete weather' : ''}`}
-        aria-describedby={`${route.id}-duration ${route.id}-distance ${route.id}-arrival ${route.id}-risk`}
+        aria-describedby={`${route.id}-duration ${route.id}-distance ${route.id}-arrival${hasRiskStats ? ` ${route.id}-risk` : ''}`}
       >
         <div className="route-row-header">
           <span className="route-name">
@@ -98,25 +100,53 @@ export function RouteRow({
           </span>
         </div>
       </button>
-      <div className="risk-mileage" id={`${route.id}-risk`}>
-        <MetricTooltip description="Estimated miles with severe weather along this route.">
-          Severe <strong>{formatRiskMiles(route.summary.severe_miles)}</strong> mi
-        </MetricTooltip>
-        <MetricTooltip description="Estimated miles with high-risk weather along this route.">
-          High <strong>{formatRiskMiles(route.summary.high_miles)}</strong> mi
-        </MetricTooltip>
-        <MetricTooltip description="Average weather risk along the route. 0 is low; 4 means no travel.">
-          Avg risk <strong>{route.summary.average_risk?.toFixed(2) ?? '—'}</strong>
-        </MetricTooltip>
-      </div>
+      {hasRiskStats ? (
+        <div className="risk-mileage" id={`${route.id}-risk`}>
+          {severe_miles > 0 ? (
+            <MetricTooltip
+              level="severe"
+              description="Estimated miles with severe weather along this route."
+            >
+              Severe <strong>{formatRiskMiles(severe_miles)}</strong> mi
+            </MetricTooltip>
+          ) : null}
+          {high_miles > 0 ? (
+            <MetricTooltip
+              level="high"
+              description="Estimated miles with high-risk weather along this route."
+            >
+              High <strong>{formatRiskMiles(high_miles)}</strong> mi
+            </MetricTooltip>
+          ) : null}
+          {average_risk !== 0 ? (
+            <MetricTooltip
+              level={averageRiskTone(average_risk)}
+              description="Distance-weighted average risk, from 0 (low) to 4 (no travel). Color shows the average, not the worst conditions."
+            >
+              Avg risk{' '}
+              <strong>
+                {average_risk === null
+                  ? 'Unknown'
+                  : average_risk > 0 && average_risk < 0.01
+                    ? '<0.01'
+                    : average_risk.toFixed(2)}
+              </strong>
+            </MetricTooltip>
+          ) : null}
+        </div>
+      ) : null}
       {route.summary.status === 'blocked' ? (
         <div className="route-warning">
           <MetricTooltip
             warning
+            level="no_travel"
             description="Unsafe miles on this route. This route cannot be recommended."
           >
             <CircleAlert size={14} aria-hidden="true" />
-            No travel · {formatRiskMiles(route.summary.risk_miles.no_travel)} mi
+            No travel
+            {route.summary.risk_miles.no_travel > 0
+              ? ` · ${formatRiskMiles(route.summary.risk_miles.no_travel)} mi`
+              : ''}
           </MetricTooltip>
         </div>
       ) : null}
@@ -124,10 +154,14 @@ export function RouteRow({
         <div className="route-warning unknown">
           <MetricTooltip
             warning
+            level="unknown"
             description="Weather is missing for these miles. This route cannot be recommended yet."
           >
             <CircleAlert size={14} aria-hidden="true" />
-            Incomplete weather · {formatRiskMiles(route.summary.risk_miles.unknown)} mi unknown
+            Incomplete weather
+            {route.summary.risk_miles.unknown > 0
+              ? ` · ${formatRiskMiles(route.summary.risk_miles.unknown)} mi unknown`
+              : ''}
           </MetricTooltip>
         </div>
       ) : null}

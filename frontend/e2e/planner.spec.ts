@@ -94,6 +94,43 @@ test('editing the example submits live routing with the selected load and spacin
   await expect(page.getByRole('slider')).toHaveValue('0');
 });
 
+test('risk hints hide zeroes and follow the visible route list', async ({ page, isMobile }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Routes', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Severe 0|^High 0/ })).toHaveCount(0);
+  const recommended = page.getByRole('button', { name: /Select .+, recommended/ });
+  const high = page.getByRole('button', { name: 'High 50 mi', exact: true });
+  await high.click();
+  const tooltip = page.getByRole('tooltip');
+  await expect(tooltip).toContainText('high-risk weather');
+  await expect(recommended).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(tooltip).toHaveCount(0);
+
+  if (!isMobile) {
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await high.click();
+    await expect(tooltip).toBeVisible();
+    const formTop = (await page.locator('.trip-form').boundingBox())!.y;
+    await page.locator('.route-options').evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect(tooltip).toHaveCount(0);
+    expect((await page.locator('.trip-form').boundingBox())!.y).toBe(formTop);
+  }
+
+  const average = page.getByRole('button', { name: 'Avg risk 0.85', exact: true });
+  await average.click();
+  await expect(tooltip).toBeVisible();
+  const box = (await tooltip.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  await expect(recommended).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('clear removes the example and keeps the trip controls', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('slider')).toBeEnabled();

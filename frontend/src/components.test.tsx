@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForecastTimeline } from './ForecastTimeline';
 import { RouteRow } from './RouteList';
 import { CheckpointTable } from './CheckpointTable';
@@ -9,6 +9,7 @@ import type { Corridor, Route } from './types';
 import { TripForm, initialForm } from './TripForm';
 
 afterEach(cleanup);
+afterEach(() => vi.restoreAllMocks());
 describe('accessible trip validation', () => {
   it('associates an ambiguous clock-change error with departure and focuses the field without submitting', async () => {
     const submit = vi.fn();
@@ -74,6 +75,11 @@ const route: Route = {
   },
 };
 describe('route safety states', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(20, 100, 120, 24),
+    );
+  });
   it('makes no travel visible and selectable for inspection', () => {
     const select = vi.fn();
     render(
@@ -105,13 +111,16 @@ describe('route safety states', () => {
         timezone="America/Chicago"
       />,
     );
-    expect(screen.getByText(/Incomplete weather.*unknown/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Incomplete weather' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avg risk Unknown' }).parentElement).toHaveClass(
+      'risk-unknown',
+    );
     expect(screen.getByRole('button', { name: /^Select / })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
   });
-  it('explains route metrics on hover, focus, and tap without changing route selection', () => {
+  it('explains route metrics on hover, focus, and tap without changing route selection', async () => {
     const select = vi.fn();
     render(
       <RouteRow
@@ -126,8 +135,11 @@ describe('route safety states', () => {
     const stat = screen.getByRole('button', { name: 'Severe 20 mi' });
     fireEvent.mouseEnter(stat);
     expect(screen.getByRole('tooltip')).toHaveTextContent('Estimated miles with severe weather');
-    fireEvent.mouseLeave(stat);
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    fireEvent.mouseEnter(stat);
+    fireEvent.mouseLeave(stat);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
     fireEvent.focus(stat);
     expect(stat).toHaveAccessibleDescription(
       'Estimated miles with severe weather along this route.',
@@ -141,6 +153,99 @@ describe('route safety states', () => {
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^Select / }));
     expect(select).toHaveBeenCalledOnce();
+  });
+  it('hides zero summaries without an empty strip or missing accessible description', () => {
+    const { container } = render(
+      <RouteRow
+        route={{
+          ...route,
+          summary: {
+            ...route.summary,
+            status: 'eligible',
+            severe_miles: 0,
+            high_miles: 0,
+            average_risk: 0,
+          },
+        }}
+        index={0}
+        recommended={true}
+        selected={true}
+        onSelect={vi.fn()}
+        timezone="America/Chicago"
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /^Severe|^High|^Avg risk/ }),
+    ).not.toBeInTheDocument();
+    expect(container.querySelector('.risk-mileage')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /^Select / }).getAttribute('aria-describedby'),
+    ).not.toContain('r1-risk');
+    expect(screen.getByText('Recommended')).toBeVisible();
+  });
+  it('retains tiny positive exposure and a dominant blocked state beside a low average', () => {
+    render(
+      <RouteRow
+        route={{
+          ...route,
+          summary: { ...route.summary, severe_miles: 0, high_miles: 0.001, average_risk: 0.004 },
+        }}
+        index={0}
+        recommended={false}
+        selected={true}
+        onSelect={vi.fn()}
+        timezone="America/Chicago"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /^Severe/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'High <0.1 mi' }).parentElement).toHaveClass(
+      'risk-high',
+    );
+    expect(screen.getByRole('button', { name: 'Avg risk <0.01' }).parentElement).toHaveClass(
+      'risk-low',
+    );
+    expect(screen.getByRole('button', { name: 'No travel · 70 mi' }).parentElement).toHaveClass(
+      'risk-no_travel',
+    );
+    expect(screen.queryByText('Recommended')).not.toBeInTheDocument();
+  });
+  it('keeps the blocked warning even when its mileage is zero', () => {
+    render(
+      <RouteRow
+        route={{
+          ...route,
+          summary: { ...route.summary, risk_miles: { ...route.summary.risk_miles, no_travel: 0 } },
+        }}
+        index={0}
+        recommended={false}
+        selected={false}
+        onSelect={vi.fn()}
+        timezone="America/Chicago"
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'No travel' })).toBeVisible();
+  });
+  it('keeps tooltip text hoverable outside the scrolling route card', async () => {
+    render(
+      <RouteRow
+        route={route}
+        index={0}
+        recommended={false}
+        selected={false}
+        onSelect={vi.fn()}
+        timezone="America/Chicago"
+      />,
+    );
+    const stat = screen.getByRole('button', { name: 'High 10 mi' });
+    fireEvent.mouseEnter(stat);
+    const description = screen.getByRole('tooltip');
+    expect(description.parentElement).toBe(document.body);
+    fireEvent.mouseLeave(stat);
+    fireEvent.mouseEnter(description);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(description).toBeVisible();
+    fireEvent.mouseLeave(description);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
   });
   it('offers an accessible checkpoint action with unknown risk', () => {
     const select = vi.fn();

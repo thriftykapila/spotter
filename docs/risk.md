@@ -36,6 +36,12 @@ the route incomplete. Rank complete, unblocked routes lexicographically by Sever
 High distance, average risk, and duration, with a stable ID only for exact ties. A shorter route
 never buys its way past a worse Severe-mile result.
 
+Route-summary colors are presentation only. The average uses the unrounded score in bands
+`[0,1)` green, `[1,2)` amber, `[2,3)` orange, `[3,4)` red, and exactly `4` charcoal.
+Unknown averages are gray and explicitly labeled. An average can be low even on a blocked route;
+the separate No Travel warning and backend eligibility always take precedence.
+Zero-valued summary metrics are hidden without changing calculations or recommendation order.
+
 ## Checkpoint arrival times
 
 Sample positions are defined using provider distance progress, retaining origin and destination.

@@ -12,7 +12,7 @@ findings below.
 
 | Data | Relationship to the brief | Presentation |
 | --- | --- | --- |
-| Severe miles and High miles | Explicit first and second recommendation criteria | Keep visible; omit unnecessary `.0` decimals. |
+| Severe miles and High miles | Explicit first and second recommendation criteria | Show positive exposure; hide zeroes and omit unnecessary `.0` decimals. |
 | Average risk | Explicit third recommendation criterion | Keep the calculation; use “Avg risk” and explain the 0–4 scale in a tooltip. `/4` is not mandated. |
 | Travel time and ETA | Explicit travel-time comparison and checkpoint ETA requirements | Keep visible. |
 | No Travel exposure | Comes from the supplied risk/load thresholds; these routes are excluded | Keep the unsafe-route indication visible. |
@@ -37,13 +37,18 @@ browser reproduction or computed styles, with source references to the reviewed 
 | MEDIUM | `frontend/src/TripMap.tsx:418` | Open a checkpoint, close its popup, then select the same checkpoint again. The row remains active but the popup stays closed because the same selected object is reused. Forecast changes can also remove the popup without clearing selection. | Synchronize popup closure with selection, or use a selection event counter so repeated selection reopens details. | An apparently working checkpoint action can stop responding. |
 | MEDIUM | `frontend/src/TripMap.tsx:277` | Fit Route B at 1280 px, then narrow to 1024 px. Denver and Kansas City move outside the map edges until Fit is pressed. The observer resizes the canvas without refitting. | Refit on container changes while the user is in a fitted view; preserve deliberate manual pan/zoom. | The selected trip should remain inspectable after resizing. |
 | MEDIUM | `frontend/src/TripMap.tsx:220` | With Route B selected, clicking the shared Kansas City endpoint can select Route C's checkpoint. The handler takes the first overlapping rendered feature. | Prefer the selected route's checkpoint; identify the route and checkpoint in the popup. | Shared endpoints should not silently switch the inspected route. |
-| MEDIUM | `frontend/src/styles.css:51` | Keyboard focus uses `#8db2f3`: 2.14:1 against white and 1.98:1 against the selected-route surface. Actual keyboard focus confirmed the computed 3 px outline color. | Use a darker focus token, such as the existing blue `#245cc5` (6.15:1 against white). | The focus indicator is difficult to distinguish. [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) requires 3:1 for the relevant authored focus cue. |
 | LOW | `frontend/src/styles.css:885` | At 320 px, the forecast information popup extends about 11 px beyond its clipping map container. | Constrain or align the popup to the forecast container on narrow screens. | Part of the explanation is hidden. |
 | LOW | `frontend/src/styles.css:337` | The clock-change choice select computes to 14 px on mobile while the other input text is 16 px. | Remove the smaller text override and retain 16 px for mobile form controls. | This creates inconsistent input text. Native Safari zoom behavior was not verified. |
 
 The HIGH findings prevent a complete UI sign-off: **Block** that sign-off until they are resolved.
 The requested spacing and presentation changes are independently verified; this verdict does not
 mean those changes failed. The remaining review findings have not been implemented.
+
+## Resolved in the risk-color pass
+
+The pale keyboard-focus outline now uses the shared blue `#245cc5` focus token: 6.16:1 against
+white. The former MEDIUM focus-contrast finding is resolved. The nine findings above remain open.
+Route risk pills, checkpoint badges, and popup titles now share semantic colors with explicit text.
 
 ## Verification and limits
 

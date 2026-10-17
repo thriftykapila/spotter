@@ -36,8 +36,20 @@ and actionable request errors remain visible. Avoid taglines, repeated instructi
 implementation details, and explanatory paragraphs around the map and timeline.
 
 Route statistics omit unnecessary decimal zeroes and use clear labels: Severe, High, and Avg risk.
-Keep fractional exposure when needed. Brief stat tooltips work on hover, keyboard focus, and tap;
-Escape dismisses them. Inspecting a statistic must not select a different route.
+Hide summary metrics only when their raw value is zero, and omit the stats strip if none remain.
+Keep unknown averages and unsafe/incomplete route states visible. Small positive mileages use
+`<0.1`; small positive averages use `<0.01` rather than displaying zero. Weather measurements,
+form values, origin distance, and forecast hour zero remain available.
+
+Use shared semantic text, soft-background, and marker tokens for route statistics, checkpoint
+badges, map popups, and status messages. Average colors describe the unrounded average using
+one-point bands on the 0–4 scale; they do not describe the worst weather or determine eligibility.
+No Travel warnings remain visible alongside any average color. Risk text/background pairs must
+meet 4.5:1 contrast. Blue remains the action, selection, and keyboard-focus color.
+
+Brief stat tooltips work on hover, keyboard focus, and tap; Escape dismisses them. Keep them
+hoverable and within the viewport, including when the route list scrolls. Inspecting a statistic
+must not select a different route.
 
 ## Skills
 

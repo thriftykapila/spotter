@@ -11,6 +11,30 @@
   --border: #e1e5eb;
   --muted: #627084;
   --surface: #fff;
+  --focus-ring: var(--blue);
+  --risk-low-text: #246b50;
+  --risk-low-background: #e9f5ee;
+  --risk-low-marker: #23815d;
+  --risk-moderate-text: #795f1b;
+  --risk-moderate-background: #fcf5dd;
+  --risk-moderate-marker: #c3921b;
+  --risk-high-text: #995322;
+  --risk-high-background: #fff0e4;
+  --risk-high-marker: #db7423;
+  --risk-severe-text: #a3383e;
+  --risk-severe-background: #fff0f1;
+  --risk-severe-marker: #c23c42;
+  --risk-no_travel-text: #222936;
+  --risk-no_travel-background: #e9ebef;
+  --risk-no_travel-marker: #111827;
+  --risk-unknown-text: #5c6b80;
+  --risk-unknown-background: #f1f3f6;
+  --risk-unknown-marker: #8a929d;
+  --status-success-text: var(--risk-low-text);
+  --status-warning-text: var(--risk-moderate-text);
+  --status-warning-background: var(--risk-moderate-background);
+  --status-danger-text: var(--risk-severe-text);
+  --status-danger-background: var(--risk-severe-background);
   --radius: 8px;
   --app-header-height: 64px;
 }
@@ -48,7 +72,7 @@ input:focus-visible,
 select:focus-visible,
 summary:focus-visible,
 a:focus-visible {
-  outline: 3px solid #8db2f3;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 a {
@@ -386,15 +410,16 @@ input[aria-invalid='true'] {
 .notice {
   margin-block-start: 12px;
   border: 1px solid #ead8af;
-  background: #fffbf1;
+  color: var(--status-warning-text);
+  background: var(--status-warning-background);
   border-radius: var(--radius);
   padding: 12px;
   font-size: 13px;
   line-height: 1.5;
 }
 .notice.error {
-  color: #96393e;
-  background: #fff5f5;
+  color: var(--status-danger-text);
+  background: var(--status-danger-background);
   border-color: #efcdd0;
 }
 .notice p + p,
@@ -413,7 +438,8 @@ input[aria-invalid='true'] {
 .service-notice {
   margin: 0 20px 16px;
   padding: 12px;
-  background: #fffaf0;
+  color: var(--status-warning-text);
+  background: var(--status-warning-background);
   border: 1px solid #e7d9ba;
   border-radius: var(--radius);
   font-size: 13px;
@@ -463,7 +489,7 @@ input[aria-invalid='true'] {
   outline: none;
 }
 .route-select:focus-visible::after {
-  outline: 3px solid var(--blue);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 .route-stat {
@@ -484,15 +510,26 @@ input[aria-invalid='true'] {
   text-align: inherit;
 }
 .route-stat-trigger:focus-visible {
-  outline-color: var(--blue);
+  outline-color: var(--focus-ring);
+}
+.risk-stat {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.risk-stat > .route-stat-trigger {
+  padding-inline: 6px;
+  white-space: nowrap;
 }
 .metric-tooltip {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  inset-inline-start: 0;
-  z-index: 30;
+  position: fixed;
+  bottom: auto;
+  right: auto;
+  z-index: 100;
   width: max-content;
-  max-width: 220px;
+  max-width: min(220px, calc(100vw - 16px));
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -504,17 +541,6 @@ input[aria-invalid='true'] {
   text-align: start;
   white-space: normal;
   pointer-events: auto;
-}
-.risk-mileage > .route-stat:nth-child(2) .metric-tooltip {
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-}
-.risk-mileage > .route-stat:nth-child(2):dir(rtl) .metric-tooltip {
-  transform: translateX(50%);
-}
-.risk-mileage > .route-stat:last-child .metric-tooltip {
-  inset-inline-start: auto;
-  inset-inline-end: 0;
 }
 .route-row:hover {
   border-color: #acc0e3;
@@ -557,7 +583,7 @@ input[aria-invalid='true'] {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #23694d;
+  color: var(--status-success-text);
   font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
@@ -597,8 +623,9 @@ input[aria-invalid='true'] {
 }
 .risk-mileage {
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
   margin-block-start: 9px;
   padding-block-start: 7px;
   border-block-start: 1px solid #e2e8f1;
@@ -607,7 +634,7 @@ input[aria-invalid='true'] {
   color: var(--muted);
 }
 .risk-mileage strong {
-  color: #44526a;
+  color: inherit;
   font-weight: 600;
 }
 .route-warning {
@@ -621,10 +648,10 @@ input[aria-invalid='true'] {
   font-weight: 550;
 }
 .route-warning.unknown {
-  color: #647287;
+  color: var(--risk-unknown-text);
 }
 .no-recommendation {
-  color: #96393e;
+  color: var(--status-danger-text);
   font-size: 13px;
   margin-block-start: 10px;
 }
@@ -638,7 +665,7 @@ input[aria-invalid='true'] {
   font-size: 12px;
   line-height: 1.5;
   margin: 0 0 12px;
-  color: #755823;
+  color: var(--status-warning-text);
   display: flex;
   gap: 7px;
 }
@@ -1056,35 +1083,58 @@ tbody small {
   border-radius: 5px;
   font-size: 10px;
   font-weight: 600;
-  background: #f1f3f6;
-  color: #5c6b80;
+  --risk-marker: var(--risk-unknown-marker);
+  background: var(--risk-unknown-background);
+  color: var(--risk-unknown-text);
   white-space: nowrap;
 }
 .risk-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--risk-marker, currentColor);
 }
 .risk-low {
-  color: #246b50;
-  background: #e9f5ee;
+  --risk-marker: var(--risk-low-marker);
+  color: var(--risk-low-text);
+  background: var(--risk-low-background);
 }
 .risk-moderate {
-  color: #795f1b;
-  background: #fcf5dd;
+  --risk-marker: var(--risk-moderate-marker);
+  color: var(--risk-moderate-text);
+  background: var(--risk-moderate-background);
 }
 .risk-high {
-  color: #995322;
-  background: #fff0e4;
+  --risk-marker: var(--risk-high-marker);
+  color: var(--risk-high-text);
+  background: var(--risk-high-background);
 }
 .risk-severe {
-  color: #a3383e;
-  background: #fff0f1;
+  --risk-marker: var(--risk-severe-marker);
+  color: var(--risk-severe-text);
+  background: var(--risk-severe-background);
 }
 .risk-no_travel {
-  color: #222936;
-  background: #e9ebef;
+  --risk-marker: var(--risk-no_travel-marker);
+  color: var(--risk-no_travel-text);
+  background: var(--risk-no_travel-background);
+}
+.risk-unknown {
+  --risk-marker: var(--risk-unknown-marker);
+  color: var(--risk-unknown-text);
+  background: var(--risk-unknown-background);
+}
+.map-popup .risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  margin-inline-end: 24px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 .results-footnote {
   flex-shrink: 0;
@@ -1153,11 +1203,6 @@ tbody small {
   .route-row-top {
     flex-wrap: wrap;
   }
-  .risk-mileage {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 5px 12px;
-  }
   .route-time {
     flex-wrap: wrap;
     gap: 5px 10px;
@@ -1222,7 +1267,6 @@ tbody small {
     font-size: 12px;
   }
   .risk-mileage {
-    justify-content: space-between;
     font-size: 11px;
   }
   .service-notice {
