@@ -1,0 +1,14 @@
+**/.env
+**/.env.*
+!**/.env.example
+**/.vercel/
+**/.venv/
+**/node_modules/
+**/dist/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/test-results/
+**/playwright-report/
+.playwright-cli/
+output/
