@@ -111,6 +111,7 @@ class TomTomProvider:
         if not isinstance(payload, dict) or not isinstance(payload.get("results"), list):
             raise RoutingError("GEOCODING_DATA_INVALID", "The location provider returned invalid data.")
         results = []
+        seen = set()
         for item in payload["results"]:
             if not isinstance(item, dict) or not isinstance(item.get("address"), dict):
                 raise RoutingError("GEOCODING_DATA_INVALID", "The location provider returned invalid data.")
@@ -128,6 +129,10 @@ class TomTomProvider:
                 continue
             label = address.get("freeformAddress") or address.get("municipality")
             if label:
+                signature = (label, lat, lon, timezone)
+                if signature in seen:
+                    continue
+                seen.add(signature)
                 results.append({"label": label, "lat": lat, "lon": lon, "timezone": timezone})
         return results
 

@@ -160,6 +160,27 @@ def test_geocode_encodes_entire_query_and_filters_non_us(monkeypatch):
     assert b"Denver%3F%20x%2F%23.json" in captured[0].url.raw_path
 
 
+def test_geocode_deduplicates_only_identical_options_preserving_order(monkeypatch):
+    first = {"address": {"countryCode": "US", "freeformAddress": "Denver, CO"},
+             "position": {"lat": 39.738453, "lon": -104.984853}}
+    nearby = copy.deepcopy(first)
+    nearby["position"]["lat"] += 0.0000001
+    other_label = copy.deepcopy(first)
+    other_label["address"]["freeformAddress"] = "Denver downtown, CO"
+    payload = {"results": [first, copy.deepcopy(first), nearby, other_label]}
+    monkeypatch.setattr("routing.providers._timezone_finder", lambda: Mock(
+        timezone_at=Mock(return_value="America/Denver")))
+    provider = TomTomProvider("secret", client=httpx.Client(transport=httpx.MockTransport(
+        lambda request: httpx.Response(200, json=payload))))
+    results = provider.geocode("Denver, CO")
+    assert len(results) == 3
+    assert [(result["label"], result["lat"]) for result in results] == [
+        ("Denver, CO", 39.738453),
+        ("Denver, CO", nearby["position"]["lat"]),
+        ("Denver downtown, CO", 39.738453),
+    ]
+
+
 @pytest.mark.parametrize("status, expected_calls", [(429, 1), (500, 2), (403, 1)])
 def test_provider_retries_are_bounded_and_never_retry_429(status, expected_calls):
     calls = []
