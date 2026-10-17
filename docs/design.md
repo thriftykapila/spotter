@@ -11,7 +11,8 @@ Spotter is a practical route planning workspace. The map and route comparison ar
 - Same checkpoint information is available in an accessible list.
 - Mobile stacks form, summaries, map, and checkpoint details; test 375px and 200% zoom.
 - No hero, decorative gradients, patterns, glass, fake metrics, nested cards or entrance animation.
-- Synthetic demo data is disclosed. Live failures never silently become sample weather.
+- Document synthetic demo data and risk assumptions. Live failures never silently become sample
+  weather.
 
 ## Planning flow
 
@@ -22,8 +23,8 @@ Clearing must also ignore an older in-flight request so sample results cannot re
 
 Keep the form visible beside compact route rows and a large map. Use a consistent control system:
 44px inputs and actions, 8px corners, subtle borders, restrained blue selection, and clear focus.
-Place the load and checkpoint spacing controls on one row. Put assumptions and detailed explanations
-behind Trip notes, Why this route?, and checkpoint disclosures. Blocked routes, missing weather,
+Place the load and checkpoint spacing controls on one row. Keep assumptions and route-ranking
+explanations in project documentation. Checkpoint details, blocked routes, missing weather,
 and actionable request errors remain visible. Avoid taglines, repeated instructions, service
 implementation details, and explanatory paragraphs around the map and timeline.
 

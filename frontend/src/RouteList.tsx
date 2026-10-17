@@ -42,12 +42,6 @@ export function RouteList({
           />
         ))}
       </div>
-      <details className="recommendation">
-        <summary>
-          {trip.recommended_route_id ? 'Why this route?' : 'Why no recommendation?'}
-        </summary>
-        <p>{trip.recommendation_reason}</p>
-      </details>
     </section>
   );
 }

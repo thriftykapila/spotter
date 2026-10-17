@@ -550,21 +550,6 @@ input[aria-invalid='true'] {
 .route-warning.unknown {
   color: #647287;
 }
-.recommendation {
-  margin-block-start: 12px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-.recommendation summary {
-  padding-block: 7px;
-  color: #49648c;
-  width: fit-content;
-}
-.recommendation p {
-  padding: 8px 0;
-  max-width: 55ch;
-}
 .no-recommendation {
   color: #96393e;
   font-size: 13px;
@@ -575,26 +560,6 @@ input[aria-invalid='true'] {
   font-size: 13px;
   line-height: 1.5;
   color: var(--muted);
-}
-.trip-notes {
-  margin: 0 20px 16px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-.trip-notes summary {
-  min-height: 36px;
-  padding-block: 9px;
-  width: fit-content;
-  color: #52657e;
-}
-.trip-notes p,
-.trip-notes li {
-  margin-block-end: 8px;
-}
-.trip-notes ul {
-  margin: 8px 0 0;
-  padding-inline-start: 17px;
 }
 .trip-warnings {
   font-size: 12px;
@@ -1135,8 +1100,7 @@ tbody small {
     flex: auto;
   }
   .trip-panel-header,
-  .service-notice,
-  .trip-notes {
+  .service-notice {
     margin-inline: auto;
     max-width: 660px;
   }
@@ -1185,7 +1149,6 @@ tbody small {
     justify-content: space-between;
     font-size: 11px;
   }
-  .trip-notes,
   .service-notice {
     margin-inline: 16px;
   }

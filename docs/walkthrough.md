@@ -9,7 +9,7 @@ visible together. Do not show secret environment values or account tokens while 
 | Time | Show and explain |
 | --- | --- |
 | 0:00–0:40 | State the problem: route weather must match arrival time. Introduce origin, destination, departure, load, and spacing. Explain that the initial example uses synthetic data. |
-| 0:40–1:40 | Compare the three routes. Explain the recommendation using Severe miles, High miles, average risk, then time. Select another route and show its highlighted geometry. |
+| 0:40–1:40 | Compare the three routes. Explain the documented ranking aloud: Severe miles, High miles, average risk, then time. Select another route and show its highlighted geometry. |
 | 1:40–2:40 | Select a checkpoint. Show its distance, ETA, sustained wind/gust, rain, snowfall, risk, and explanation. Open the accessible checkpoint list. |
 | 2:40–3:30 | Inspect the blocked sample route and explain its wind/load rule. Edit the load and use Find routes to request live weather. Explain why No Travel options are excluded; actual weather may leave the risk band unchanged. |
 | 3:30–4:20 | Change 25-mile spacing to 10 or 50. Explain origin/destination inclusion, partial final intervals, and sampled-risk mileage. |

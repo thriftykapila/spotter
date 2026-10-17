@@ -7,7 +7,7 @@ route comparison, map, and forecast timeline in one workspace.
 **[Open the hosted application](https://spotter-web-swart.vercel.app)** ·
 **[GitHub repository](https://github.com/thriftykapila/spotter)**
 
-The hosted app supports live US truck routing and a labeled sample trip. TomTom, Upstash Free,
+The hosted app supports live US truck routing and a default synthetic example. TomTom, Upstash Free,
 and Vercel Hobby are configured. No payment method or paid upgrade was added during setup.
 
 ![Sample trip workspace with three route options, checkpoints, and forecast timeline](docs/screenshots/sample-workspace.png)

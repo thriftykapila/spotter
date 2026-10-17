@@ -6,7 +6,6 @@ import { TripForm, formToInput, initialForm, SAMPLE_ORIGIN, type FormValues } fr
 import { RouteList } from './RouteList';
 import { ForecastTimeline } from './ForecastTimeline';
 import { CheckpointTable } from './CheckpointTable';
-import { formatTime } from './time';
 import type { Checkpoint, PlanInput, Trip } from './types';
 
 const TripMap = lazy(() => import('./TripMap'));
@@ -154,31 +153,6 @@ export default function App() {
               {pending ? 'Finding routes…' : 'Enter a trip to find routes.'}
             </div>
           )}
-          <details className="trip-notes">
-            <summary>Trip notes</summary>
-            {trip?.mode === 'sample' ? (
-              <p>Example routes and weather are synthetic. Find routes requests live data.</p>
-            ) : null}
-            <p>
-              Arrival-time forecasts are sampled along each route. Driving ETAs exclude stops and
-              rest breaks. Check current road conditions before travel.
-            </p>
-            {trip?.warnings.map((warning, index) => (
-              <p key={`trip-${index}`}>{warning}</p>
-            ))}
-            {trip &&
-              corridor.data?.warnings.map((warning, index) => (
-                <p key={`forecast-${index}`}>{warning}</p>
-              ))}
-            {health.isError ? <p>The service could not be reached.</p> : null}
-            {trip ? (
-              <p>
-                {trip.mode === 'sample' ? 'Example generated' : 'Weather fetched'}{' '}
-                {formatTime(trip.weather_fetched_at, trip.origin.timezone)} · Expires{' '}
-                {formatTime(trip.expires_at, trip.origin.timezone)}
-              </p>
-            ) : null}
-          </details>
         </aside>
         <section className="main-panel" aria-label="Trip results">
           <div className={`map-workspace ${pending ? 'updating' : ''}`} aria-busy={pending}>
