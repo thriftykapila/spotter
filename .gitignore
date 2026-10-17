@@ -19,3 +19,5 @@ output/
 staticfiles/
 .hypothesis/
 .DS_Store
+*.tsbuildinfo
+.playwright-cli/
