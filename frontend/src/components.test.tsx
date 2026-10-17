@@ -16,15 +16,16 @@ describe('accessible trip validation', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
         <TripForm
-          mode="sample"
           values={values}
           onValues={vi.fn()}
           onSubmit={submit}
           pending={false}
-          liveAvailable={false}
+          liveAvailable={true}
+          onClear={vi.fn()}
         />
       </QueryClientProvider>,
     );
+    expect(screen.queryByLabelText('When a local time occurs twice')).not.toBeInTheDocument();
     fireEvent.submit(screen.getByRole('form', { name: 'Plan your trip' }));
     const departure = screen.getByLabelText('Departure date & time');
     await waitFor(() => expect(departure).toHaveFocus());
@@ -33,6 +34,8 @@ describe('accessible trip validation', () => {
       /Origin time zone: America\/Denver.*occurs twice during a clock change/,
     );
     expect(document.getElementById('departure-error')).toHaveTextContent('earlier/later offset');
+    expect(screen.getByRole('combobox', { name: 'When a local time occurs twice' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'Use the earlier time' })).toBeInTheDocument();
     expect(submit).not.toHaveBeenCalled();
   });
 });
@@ -102,7 +105,7 @@ describe('route safety states', () => {
         timezone="America/Chicago"
       />,
     );
-    expect(screen.getByText('Incomplete weather: recommendation unavailable')).toBeInTheDocument();
+    expect(screen.getByText(/Incomplete weather.*unknown/)).toBeInTheDocument();
     expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
   });
   it('offers an accessible checkpoint action with unknown risk', () => {
@@ -147,7 +150,7 @@ describe('forecast timeline', () => {
     );
     fireEvent.change(screen.getByRole('slider'), { target: { value: '48' } });
     expect(hour).toHaveBeenCalledWith(48);
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Show heatmap' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Heatmap' }));
     expect(visible).toHaveBeenCalledWith(false);
   });
   it('disables the slider until corridor data is ready', () => {
@@ -162,7 +165,7 @@ describe('forecast timeline', () => {
       />,
     );
     expect(screen.getByRole('slider')).toBeDisabled();
-    expect(screen.getByText('Loading 48-hour forecast…')).toBeInTheDocument();
+    expect(screen.getByText('Loading forecast…')).toBeInTheDocument();
   });
   it('uses a fixed palette and clamps forecast frames', () => {
     expect(forecastColorExpression(48)).toEqual([

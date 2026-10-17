@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { getCorridor, getHealth, planTrip } from './api';
+import { geocode, getCorridor, getHealth, planTrip } from './api';
 import type { Corridor, Route, Trip } from './types';
 
 vi.mock('./api', () => ({
@@ -11,7 +11,15 @@ vi.mock('./api', () => ({
   getCorridor: vi.fn(),
   geocode: vi.fn(),
 }));
-vi.mock('./TripMap', () => ({ default: () => <div data-testid="map-placeholder" /> }));
+vi.mock('./TripMap', () => ({
+  default: ({ trip, corridor }: { trip?: Trip; corridor?: Corridor }) => (
+    <div
+      data-testid="map-placeholder"
+      data-trip-id={trip?.id ?? ''}
+      data-cells={corridor?.cells.features.length ?? 0}
+    />
+  ),
+}));
 
 const route: Route = {
   id: 'route-a',
@@ -108,9 +116,10 @@ function renderApp() {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getHealth).mockResolvedValue({
-    live_available: false,
-    missing_configuration: ['TOMTOM_API_KEY'],
+    live_available: true,
+    missing_configuration: [],
   });
+  vi.mocked(geocode).mockResolvedValue({ results: [], live_available: true });
   vi.mocked(planTrip).mockResolvedValue(trip);
   vi.mocked(getCorridor).mockResolvedValue(corridor);
 });
@@ -119,15 +128,126 @@ afterEach(() => {
   focusManager.setFocused(undefined);
 });
 
+describe('unified trip planner', () => {
+  it('keeps the example form editable and submits edited values as live routing', async () => {
+    vi.mocked(planTrip)
+      .mockResolvedValueOnce(trip)
+      .mockResolvedValueOnce({
+        ...trip,
+        id: 'live_trip',
+        mode: 'live',
+        load_lb: 45000,
+        spacing_miles: 10,
+      });
+    renderApp();
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    expect(screen.getByText('Sample trip', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Data source' })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Origin' })).not.toHaveAttribute('readonly');
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Load weight lb' }), {
+      target: { value: '45000' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Checkpoint spacing' }), {
+      target: { value: '10' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Find routes' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-trip-id', 'live_trip'),
+    );
+    expect(planTrip).toHaveBeenNthCalledWith(1, expect.objectContaining({ mode: 'sample' }));
+    expect(planTrip).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        mode: 'live',
+        load_lb: 45000,
+        spacing_miles: 10,
+        origin: expect.objectContaining({ label: 'Denver, CO' }),
+        destination: expect.objectContaining({ label: 'Kansas City, MO' }),
+      }),
+    );
+    expect(screen.getByRole('form', { name: 'Plan your trip' })).toBeVisible();
+    expect(screen.queryByText('Sample trip', { exact: true })).not.toBeInTheDocument();
+  });
+
+  it('clears typed locations and every displayed result while retaining trip controls', async () => {
+    renderApp();
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    fireEvent.change(screen.getByRole('combobox', { name: 'Origin' }), {
+      target: { value: 'Boulder' },
+    });
+    expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('Boulder');
+    fireEvent.change(screen.getByLabelText('Departure date & time'), {
+      target: { value: '2026-10-19T09:15' },
+    });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Load weight lb' }), {
+      target: { value: '43000' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Checkpoint spacing' }), {
+      target: { value: '50' },
+    });
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '24' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Clear trip' }));
+    expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Destination' })).toHaveValue('');
+    expect(screen.getByLabelText('Departure date & time')).toHaveValue('2026-10-19T09:15');
+    expect(screen.getByRole('spinbutton', { name: 'Load weight lb' })).toHaveValue(43000);
+    expect(screen.getByRole('combobox', { name: 'Checkpoint spacing' })).toHaveValue('50');
+    expect(screen.queryByRole('button', { name: /^Select Route/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('Checkpoints', { exact: true })).not.toBeInTheDocument();
+    expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-trip-id', '');
+    expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-cells', '0');
+    expect(screen.getByRole('slider')).toBeDisabled();
+    expect(screen.getByRole('slider')).toHaveValue('0');
+    expect(planTrip).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the example after clearing without adding a source selector', async () => {
+    renderApp();
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Clear trip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load example' }));
+    await screen.findByText('Sample trip', { exact: true });
+    expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('Denver, CO');
+    expect(screen.getByRole('combobox', { name: 'Destination' })).toHaveValue('Kansas City, MO');
+    expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-trip-id', trip.id);
+    expect(planTrip).toHaveBeenCalledTimes(2);
+    expect(planTrip).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'sample' }));
+  });
+
+  it.each(['initial example', 'live request'] as const)(
+    'ignores a late %s response after clearing',
+    async (request) => {
+      let finish!: (value: Trip) => void;
+      const response = new Promise<Trip>((resolve) => {
+        finish = resolve;
+      });
+      if (request === 'initial example') vi.mocked(planTrip).mockReturnValueOnce(response);
+      else vi.mocked(planTrip).mockResolvedValueOnce(trip).mockReturnValueOnce(response);
+      renderApp();
+      if (request === 'live request') {
+        await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+        fireEvent.click(screen.getByRole('button', { name: 'Find routes' }));
+      } else await waitFor(() => expect(planTrip).toHaveBeenCalledTimes(1));
+      fireEvent.click(screen.getByRole('button', { name: 'Clear trip' }));
+      await act(async () => finish({ ...trip, id: 'late_trip' }));
+      expect(screen.queryByRole('button', { name: /^Select Route/ })).not.toBeInTheDocument();
+      expect(screen.getByTestId('map-placeholder')).toHaveAttribute('data-trip-id', '');
+      expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('');
+      expect(getCorridor).toHaveBeenCalledTimes(request === 'initial example' ? 0 : 1);
+    },
+  );
+});
+
 describe('live service availability', () => {
-  it('refreshes on entering Live and can recheck without losing the form or assessment', async () => {
+  it('can recheck without losing the form or assessment', async () => {
+    vi.mocked(getHealth).mockResolvedValue({
+      live_available: false,
+      missing_configuration: ['TOMTOM_API_KEY'],
+    });
     renderApp();
     await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
     expect(getHealth).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Live routes' }));
-    await waitFor(() => expect(getHealth).toHaveBeenCalledTimes(2));
     const recheck = await screen.findByRole('button', { name: 'Recheck service' });
-    const compare = screen.getByRole('button', { name: 'Compare routes' });
+    const compare = screen.getByRole('button', { name: 'Find routes' });
     expect(compare).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Departure date & time'), {
       target: { value: '2026-10-19T09:15' },
@@ -135,7 +255,9 @@ describe('live service availability', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Load weight lb' }), {
       target: { value: '43000' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: '50 miles' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Checkpoint spacing' }), {
+      target: { value: '50' },
+    });
     const selected = screen.getByRole('button', { name: /^Select Route A/ });
     fireEvent.click(selected);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '24' } });
@@ -150,17 +272,19 @@ describe('live service availability', () => {
     );
     await act(async () => finishHealth({ live_available: true, missing_configuration: [] }));
 
-    await screen.findByText('Live service ready');
+    await waitFor(() =>
+      expect(screen.queryByText('Live routes unavailable.')).not.toBeInTheDocument(),
+    );
     expect(screen.queryByRole('button', { name: 'Recheck service' })).not.toBeInTheDocument();
     expect(compare).toBeEnabled();
     expect(screen.getByRole('combobox', { name: 'Origin' })).toHaveValue('Denver, CO');
     expect(screen.getByRole('combobox', { name: 'Destination' })).toHaveValue('Kansas City, MO');
     expect(screen.getByLabelText('Departure date & time')).toHaveValue('2026-10-19T09:15');
     expect(screen.getByRole('spinbutton', { name: 'Load weight lb' })).toHaveValue(43000);
-    expect(screen.getByRole('radio', { name: '50 miles' })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Checkpoint spacing' })).toHaveValue('50');
     expect(selected).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('slider')).toHaveValue('24');
-    expect(getHealth).toHaveBeenCalledTimes(3);
+    expect(getHealth).toHaveBeenCalledTimes(2);
     expect(planTrip).toHaveBeenCalledTimes(1);
     expect(getCorridor).toHaveBeenCalledTimes(1);
   });
@@ -171,11 +295,13 @@ describe('live service availability', () => {
       .mockResolvedValueOnce({ live_available: true, missing_configuration: [] });
     const { client } = renderApp();
     await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
-    await screen.findByText('Sample mode ready');
+    await screen.findByText('Live routes unavailable.');
     focusManager.setFocused(false);
     await client.invalidateQueries({ queryKey: ['health'], refetchType: 'none' });
     await act(async () => focusManager.setFocused(true));
-    await screen.findByText('Live service ready');
+    await waitFor(() =>
+      expect(screen.queryByText('Live routes unavailable.')).not.toBeInTheDocument(),
+    );
     expect(getHealth).toHaveBeenCalledTimes(2);
     expect(planTrip).toHaveBeenCalledTimes(1);
     expect(getCorridor).toHaveBeenCalledTimes(1);
@@ -188,11 +314,13 @@ describe('corridor forecast retry', () => {
     async (state) => {
       if (state === 'error')
         vi.mocked(getCorridor).mockRejectedValueOnce(new Error('Weather provider unavailable'));
-      if (state === 'warnings')
+      if (state === 'warnings') {
+        vi.mocked(planTrip).mockResolvedValue({ ...trip, mode: 'live' });
         vi.mocked(getCorridor).mockResolvedValueOnce({
           ...corridor,
           warnings: ['Some forecast data could not be fetched.'],
         });
+      }
       if (state === 'unknown')
         vi.mocked(getCorridor).mockResolvedValueOnce({
           ...corridor,
@@ -224,18 +352,22 @@ describe('corridor forecast retry', () => {
       expect(slider).toHaveValue(state === 'error' ? '0' : '24');
     },
   );
-  it('does not show a retry control for a complete forecast without warnings', async () => {
-    renderApp();
-    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
-    expect(screen.queryByRole('button', { name: 'Retry forecast' })).not.toBeInTheDocument();
-  });
+  it.each([{ warnings: [] }, { warnings: ['Sample data: this is a synthetic forecast heatmap.'] }])(
+    'does not offer sample forecast retry for informational warnings $warnings',
+    async ({ warnings }) => {
+      vi.mocked(getCorridor).mockResolvedValue({ ...corridor, warnings });
+      renderApp();
+      await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+      expect(screen.queryByRole('button', { name: 'Retry forecast' })).not.toBeInTheDocument();
+    },
+  );
 });
 describe('request error actions', () => {
   it('labels and retries the failed initial sample request', async () => {
     vi.mocked(planTrip).mockRejectedValueOnce(new Error('Routing service unavailable'));
     renderApp();
-    fireEvent.click(await screen.findByRole('button', { name: 'Retry sample trip' }));
-    await screen.findByRole('heading', { name: 'Route comparison' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry example' }));
+    await screen.findByRole('heading', { name: 'Routes' });
     expect(planTrip).toHaveBeenCalledTimes(2);
   });
   it('labels a failed comparison action as dismiss and does not silently retry', async () => {
@@ -243,8 +375,8 @@ describe('request error actions', () => {
       .mockResolvedValueOnce(trip)
       .mockRejectedValueOnce(new Error('Comparison unavailable'));
     renderApp();
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit trip' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Compare routes' }));
+    await waitFor(() => expect(screen.getByRole('slider')).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Find routes' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Dismiss error' }));
     await waitFor(() =>
       expect(screen.queryByText('Comparison unavailable')).not.toBeInTheDocument(),

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, MapPin, Navigation, Search } from 'lucide-react';
+import { ArrowRight, MapPin, Search } from 'lucide-react';
 import { geocode } from './api';
 import { localDepartureToUTC, nextDeparture, type OffsetChoice } from './time';
 import type { Location, PlanInput } from './types';
@@ -79,14 +79,12 @@ function LocationField({
   label,
   selected,
   onSelected,
-  readOnly,
   name,
   error,
 }: {
   label: string;
   selected: Location | null;
   onSelected: (location: Location | null) => void;
-  readOnly: boolean;
   name: 'origin' | 'destination';
   error?: string;
 }) {
@@ -108,7 +106,7 @@ function LocationField({
   const result = useQuery({
     queryKey: ['geocode', query],
     queryFn: ({ signal }) => geocode(query, signal),
-    enabled: !readOnly && open && query.trim().length >= 3 && query !== selected?.label,
+    enabled: open && query.trim().length >= 3 && query !== selected?.label,
   });
   const options = result.data?.results ?? [];
   const pick = (location: Location) => {
@@ -130,7 +128,7 @@ function LocationField({
       pick(options[active]);
     }
   }
-  const showOptions = !readOnly && open && text !== selected?.label && query.length >= 3;
+  const showOptions = open && text !== selected?.label && query.length >= 3;
   return (
     <div className="location-field">
       <label htmlFor={id}>{label}</label>
@@ -140,7 +138,7 @@ function LocationField({
           id={id}
           name={name}
           value={text}
-          readOnly={readOnly}
+          required
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={showOptions && options.length > 0}
@@ -179,7 +177,7 @@ function LocationField({
           ) : null}
           {options.map((location, index) => (
             <button
-              key={`${location.lat},${location.lon}`}
+              key={`${location.label}|${location.timezone}|${location.lat},${location.lon}`}
               id={`${id}-${index}`}
               type="button"
               role="option"
@@ -203,22 +201,25 @@ function LocationField({
 }
 
 export function TripForm({
-  mode,
   values,
   onValues,
   onSubmit,
   pending,
   liveAvailable,
+  onClear,
+  resetKey = 0,
 }: {
-  mode: PlanInput['mode'];
   values: FormValues;
   onValues: (values: FormValues) => void;
   onSubmit: (input: PlanInput) => void;
   pending: boolean;
   liveAvailable: boolean;
+  onClear: () => void;
+  resetKey?: number;
 }) {
   const [error, setError] = useState<{ field: FormField; message: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => setError(null), [resetKey]);
   const update = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     onValues({ ...values, [key]: value });
     setError((current) =>
@@ -230,7 +231,7 @@ export function TripForm({
   function submit(event: FormEvent) {
     event.preventDefault();
     try {
-      const input = formToInput(values, mode);
+      const input = formToInput(values, 'live');
       setError(null);
       onSubmit(input);
     } catch (cause) {
@@ -246,34 +247,36 @@ export function TripForm({
   }
   return (
     <form ref={formRef} onSubmit={submit} className="trip-form" aria-label="Plan your trip">
-      <div className="section-heading">
-        <h1>Plan your trip</h1>
-        <Navigation size={19} aria-hidden="true" />
+      <div className="trip-panel-header">
+        <h1>Trip planner</h1>
+        <button type="button" className="clear-trip text-button" onClick={onClear}>
+          Clear trip
+        </button>
       </div>
-      <p className="section-intro">Find the clearest way ahead.</p>
       <LocationField
+        key={`origin-${resetKey}`}
         label="Origin"
         name="origin"
         error={error?.field === 'origin' ? error.message : undefined}
         selected={values.origin}
         onSelected={(value) => update('origin', value)}
-        readOnly={mode === 'sample'}
       />
       <LocationField
+        key={`destination-${resetKey}`}
         label="Destination"
         name="destination"
         error={error?.field === 'destination' ? error.message : undefined}
         selected={values.destination}
         onSelected={(value) => update('destination', value)}
-        readOnly={mode === 'sample'}
       />
-      {mode === 'sample' ? (
-        <p className="field-hint">Sample corridor: Denver → Kansas City.</p>
-      ) : (
-        <p className="field-hint">US routes. Select a location suggestion.</p>
-      )}
       <div className="field">
-        <label htmlFor="departure">Departure date & time</label>
+        <div className="field-label-row">
+          <label htmlFor="departure">Departure date & time</label>
+          <span className="field-label-meta" id="departure-hint">
+            <span className="sr-only">Origin time zone:</span>{' '}
+            {values.origin?.timezone ?? 'Select origin'}
+          </span>
+        </div>
         <input
           id="departure"
           name="departure"
@@ -285,81 +288,74 @@ export function TripForm({
           onChange={(event) => update('departure', event.target.value)}
           required
         />
-        <p className="field-hint" id="departure-hint">
-          Origin time zone: <strong>{values.origin?.timezone ?? 'Select an origin'}</strong>
-        </p>
         {error?.field === 'departure' ? (
           <p className="notice error" id="departure-error">
             {error.message}
           </p>
         ) : null}
       </div>
-      <details className="clock-options">
-        <summary>Clock change options</summary>
-        <label htmlFor="offset">When a local time occurs twice</label>
-        <select
-          id="offset"
-          name="offset"
-          value={values.offsetChoice}
-          onChange={(event) => update('offsetChoice', event.target.value as OffsetChoice)}
-        >
-          <option value="reject">Ask me to choose</option>
-          <option value="earlier">Use the earlier time</option>
-          <option value="later">Use the later time</option>
-        </select>
-        <p className="field-hint">Times skipped when clocks move forward are always rejected.</p>
-      </details>
-      <div className="field">
-        <label htmlFor="load">
-          Load weight <span className="label-unit">lb</span>
-        </label>
-        <input
-          id="load"
-          name="load"
-          autoComplete="off"
-          aria-invalid={error?.field === 'load' || undefined}
-          aria-describedby={`load-hint${error?.field === 'load' ? ' load-error' : ''}`}
-          type="number"
-          inputMode="decimal"
-          min="0"
-          step="any"
-          value={values.load}
-          onChange={(event) => update('load', event.target.value)}
-          required
-        />
-        <p className="field-hint" id="load-hint">
-          Cargo weight used for the provided wind rules.
-        </p>
-        {error?.field === 'load' ? (
-          <p className="notice error" id="load-error">
-            {error.message}
-          </p>
-        ) : null}
-      </div>
-      <fieldset className="spacing-field">
-        <legend>Weather checkpoint spacing</legend>
-        <div className="segmented spacing">
-          {([10, 25, 50] as const).map((spacing) => (
-            <label key={spacing} className={values.spacing === spacing ? 'selected' : ''}>
-              <input
-                type="radio"
-                name="spacing"
-                value={spacing}
-                checked={values.spacing === spacing}
-                onChange={() => update('spacing', spacing)}
-              />
-              <span>{spacing} miles</span>
-            </label>
-          ))}
+      {error?.field === 'departure' || values.offsetChoice !== 'reject' ? (
+        <details className="clock-options" open>
+          <summary>Options</summary>
+          <label htmlFor="offset">When a local time occurs twice</label>
+          <select
+            id="offset"
+            name="offset"
+            value={values.offsetChoice}
+            onChange={(event) => update('offsetChoice', event.target.value as OffsetChoice)}
+          >
+            <option value="reject">Ask me to choose</option>
+            <option value="earlier">Use the earlier time</option>
+            <option value="later">Use the later time</option>
+          </select>
+          <p className="field-hint">Times skipped when clocks move forward are always rejected.</p>
+        </details>
+      ) : null}
+      <div className="form-row">
+        <div className="field">
+          <label htmlFor="load">
+            Load weight <span className="label-unit">lb</span>
+          </label>
+          <input
+            id="load"
+            name="load"
+            autoComplete="off"
+            aria-invalid={error?.field === 'load' || undefined}
+            aria-describedby={error?.field === 'load' ? 'load-error' : undefined}
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="any"
+            value={values.load}
+            onChange={(event) => update('load', event.target.value)}
+            required
+          />
+          {error?.field === 'load' ? (
+            <p className="notice error" id="load-error">
+              {error.message}
+            </p>
+          ) : null}
         </div>
-        <p className="field-hint">Smaller intervals give a more detailed assessment.</p>
-      </fieldset>
-      <button
-        className="primary"
-        type="submit"
-        disabled={pending || (mode === 'live' && !liveAvailable)}
-      >
-        {pending ? 'Comparing routes…' : 'Compare routes'}
+        <div className="field spacing-field">
+          <label htmlFor="spacing">Checkpoint spacing</label>
+          <select
+            id="spacing"
+            name="spacing"
+            value={values.spacing}
+            onChange={(event) =>
+              update('spacing', Number(event.target.value) as FormValues['spacing'])
+            }
+          >
+            {([10, 25, 50] as const).map((spacing) => (
+              <option key={spacing} value={spacing}>
+                {spacing} miles
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <button className="primary" type="submit" disabled={pending || !liveAvailable}>
+        {pending ? 'Finding routes…' : 'Find routes'}
         <ArrowRight size={18} aria-hidden="true" />
       </button>
     </form>
