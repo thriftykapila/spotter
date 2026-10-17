@@ -113,11 +113,6 @@ svg {
   align-items: center;
   gap: 12px;
 }
-.brand-mark {
-  display: grid;
-  place-items: center;
-  color: var(--blue);
-}
 .brand strong {
   font-size: 22px;
   letter-spacing: -0.7px;

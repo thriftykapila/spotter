@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CircleAlert, Route as RouteIcon } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import { getCorridor, getHealth, planTrip } from './api';
 import { TripForm, formToInput, initialForm, SAMPLE_ORIGIN, type FormValues } from './TripForm';
 import { RouteList } from './RouteList';
@@ -102,9 +102,6 @@ export default function App() {
       </a>
       <header className="app-header">
         <a className="brand" href="/" aria-label="Spotter home">
-          <span className="brand-mark">
-            <RouteIcon size={22} aria-hidden="true" />
-          </span>
           <strong>spotter</strong>
         </a>
         <div className="header-actions">
