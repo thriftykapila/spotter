@@ -1,7 +1,8 @@
 # Verification record
 
-Checked on 18 October 2026. Core routing CI passed for `0782af4`; the service-status recovery
-update is covered by the frontend regressions in `64f7b0c`.
+Checked on 18 October 2026. The initial deployment record is below; the latest sidebar and tooltip
+verification appears in the final interface section. Core routing CI passed for `0782af4`;
+the service-status recovery update is covered by the frontend regressions in `64f7b0c`.
 
 - 134 backend tests passed, with Ruff and Django system checks clean.
 - 27 frontend unit tests passed. The production build and 10 desktop/mobile browser scenarios passed.
@@ -48,11 +49,37 @@ and forecast hour without planning another route or fetching the corridor again.
 
 The revised workspace opens with an editable example and no mode tabs. Every manual Find routes
 submission uses live routing. Clear trip removes route and forecast data, including when an older
-request completes afterward. Tests cover clearing, restoration, late responses, and hourly scrubbing.
-Assumptions and detailed risk explanations use disclosures; blocked and incomplete route states stay visible.
+request completes afterward. Tests cover editing the example, clearing, late responses, and hourly
+scrubbing. Assumptions are documented; blocked and incomplete route states stay visible.
+
+## Latest sidebar and tooltip pass
+
+The three initial requested fixes were committed as `a6f632b` before the deeper UI review.
+The follow-up commits `0f67517` and `e0cec65` reflect the user's clarified preference for roomier tall-screen spacing, a 12px
+Destination label gap, and a 12px dropdown-arrow inset.
+
+| Viewport | Sidebar visible / content height | Final route bottom | Input height |
+| --- | --- | --- | --- |
+| 1280×720 | 668 / 668px | 712.7px | 40px |
+| 1440×900 | 836 / 836px | 888px | 44px |
+| 1440×1000 | 936 / 936px | 988px | 44px |
+
+The default form and all three routes fit without desktop sidebar scrolling. At 320px and 390px,
+inputs remained 44px tall with no horizontal page overflow; the mobile layout scrolls vertically.
+Destination label gap and dropdown arrow inset measured 12px. Error messages and shorter windows
+retain scrolling so content is not hidden to obtain a fit.
+
+27 frontend unit tests, the production build, and 10 desktop/mobile browser scenarios passed.
+The tooltip regression covers hover, keyboard focus, tap, Escape, and preserving route selection.
+Actual browser checks confirmed all four risk-stat tooltips fit at 1440px, 390px, and 320px,
+closed with Escape, opened on tap, and did not change the selected route.
+Backend checks passed 134 tests and the Django system check. Production-mode `check --deploy`
+exited successfully with the existing HSTS-disabled warning.
+
+The [UI review](ui-review.md) records outstanding findings separately from these implemented changes.
 
 ## Remaining delivery item
 
 The [seven-minute walkthrough script](walkthrough.md) is ready. A Loom recording and upload have
 not been made. Free-provider quotas and temporary service outages can pause live planning; the
-labeled sample remains available.
+default example remains available.

@@ -23,10 +23,19 @@ Clearing must also ignore an older in-flight request so sample results cannot re
 
 Keep the form visible beside compact route rows and a large map. Use a consistent control system:
 44px inputs and actions, 8px corners, subtle borders, restrained blue selection, and clear focus.
+On desktop windows up to 800px tall, use 40px controls and tighter vertical spacing so the default
+form and all three routes fit. Taller windows distribute spare height between route choices and
+retain comfortable form spacing. Mobile retains 44px inputs and normal document scrolling.
+Origin and Destination share aligned input edges with a 12px label gap. The spacing dropdown
+arrow has a 12px inset from the trailing edge.
 Place the load and checkpoint spacing controls on one row. Keep assumptions and route-ranking
 explanations in project documentation. Checkpoint details, blocked routes, missing weather,
 and actionable request errors remain visible. Avoid taglines, repeated instructions, service
 implementation details, and explanatory paragraphs around the map and timeline.
+
+Route statistics omit unnecessary decimal zeroes and use clear labels: Severe, High, and Avg risk.
+Keep fractional exposure when needed. Brief stat tooltips work on hover, keyboard focus, and tap;
+Escape dismisses them. Inspecting a statistic must not select a different route.
 
 ## Skills
 
