@@ -15,4 +15,7 @@ htmlcov/
 .vercel/
 test-results/
 playwright-report/
+output/
+staticfiles/
+.hypothesis/
 .DS_Store

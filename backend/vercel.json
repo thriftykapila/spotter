@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "django",
+  "functions": {
+    "config/wsgi.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{tests/**,.venv/**,__pycache__/**,.pytest_cache/**,.ruff_cache/**}"
+    }
+  },
+  "headers": [
+    {"source": "/api/(.*)", "headers": [
+      {"key": "Cache-Control", "value": "no-store"},
+      {"key": "X-Content-Type-Options", "value": "nosniff"}
+    ]}
+  ]
+}
