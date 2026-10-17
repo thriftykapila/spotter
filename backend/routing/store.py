@@ -40,13 +40,17 @@ end
 return 0
 """
 
+# Routing and geocoding share this budget. Even a 31-day month permits at most
+# 15,500 attempts, below the 20,000-request monthly free non-tile allowance.
+TOMTOM_DAILY_LIMIT = 500
+
 TOMTOM_BUDGET_SCRIPT = """
 local now = tonumber(redis.call('TIME')[1])
 local minute = math.floor(now / 60)
 local day = math.floor(now / 86400)
 local keys = {'spotter:{tomtom-budget}:minute:' .. minute,
               'spotter:{tomtom-budget}:day:' .. day}
-local limits = {120, 1500}
+local limits = {120, tonumber(ARGV[2])}
 local ttls = {60 - (now % 60), 86400 - (now % 86400)}
 if ARGV[1] ~= '' then
   keys[3] = 'spotter:{tomtom-budget}:ip:' .. ARGV[1] .. ':' .. minute
@@ -186,7 +190,7 @@ class SharedStore:
 
     def reserve_tomtom_budget(self, identity=""):
         identity_hash = hashlib.sha256(identity.encode()).hexdigest() if identity else ""
-        result = self.command("EVAL", TOMTOM_BUDGET_SCRIPT, 0, identity_hash)
+        result = self.command("EVAL", TOMTOM_BUDGET_SCRIPT, 0, identity_hash, TOMTOM_DAILY_LIMIT)
         if not isinstance(result, list) or len(result) != 2:
             self._unavailable()
         if result[0] != 1:
