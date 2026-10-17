@@ -4,7 +4,7 @@ Checked on 18 October 2026. Core routing CI passed for `0782af4`; the service-st
 update is covered by the frontend regressions in `64f7b0c`.
 
 - 134 backend tests passed, with Ruff and Django system checks clean.
-- 21 frontend unit tests passed. The production build and desktop/mobile browser suite passed.
+- 27 frontend unit tests passed. The production build and 10 desktop/mobile browser scenarios passed.
 - [GitHub Actions](https://github.com/thriftykapila/spotter/actions/runs/39074372989) passed all three jobs.
 - The deployed API imported Django, Shapely, pyproj, and timezonefinder on CPython 3.13.15.
 - No provider keys were found in tracked files. Local credentials are in an ignored file with 0600 permissions;
@@ -42,9 +42,14 @@ Its checkpoint list and map popup showed real ETA, wind, gusts, rain, snowfall, 
 The live interface retained its 390px mobile layout with the checkpoint table expanded.
 
 An open tab initially retained the pre-configuration health response after deployment. Service
-status now refreshes on entering Live routes and on window focus, with a Recheck service control
+status now refreshes on window focus, with a Recheck service control
 when unavailable. Regression tests verify recovery preserves the form, trip, route selection,
 and forecast hour without planning another route or fetching the corridor again.
+
+The revised workspace opens with an editable example and no mode tabs. Every manual Find routes
+submission uses live routing. Clear trip removes route and forecast data, including when an older
+request completes afterward. Tests cover clearing, restoration, late responses, and hourly scrubbing.
+Assumptions and detailed risk explanations use disclosures; blocked and incomplete route states stay visible.
 
 ## Remaining delivery item
 

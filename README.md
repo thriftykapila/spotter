@@ -22,7 +22,8 @@ make dev
 ```
 
 Open http://127.0.0.1:5173. The clearly labeled synthetic Denver–Kansas City trip works without
-API keys or Redis. Change load, departure, or checkpoint spacing to explore the rules.
+API keys or Redis. The form stays editable: **Find routes** requests live data, **Clear trip**
+removes the current trip, and **Load example** restores the example. There is no sample/live switch.
 
 For live routes, copy `backend/.env.example` to `backend/.env` and configure:
 
