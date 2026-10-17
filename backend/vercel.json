@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "django",
+  "git": {"deploymentEnabled": false},
   "functions": {
     "config/wsgi.py": {
       "maxDuration": 60,
